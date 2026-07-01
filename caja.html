@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Caja · Mi Tienda de Ropa</title>
+  <style>
+    :root {
+      --rosa: #f7a8c4;
+      --rosa-oscuro: #e0729e;
+      --blanco: #ffffff;
+      --gris: #8a8a8a;
+      --fondo: #fff5f8;
+      --verde: #2a8a4a;
+      --rojo: #c0447a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0; background: var(--fondo); color: #333;
+    }
+    .contenedor { max-width: 1000px; width: 95%; margin: 20px auto; }
+
+    .topbar {
+      background: white; padding: 15px 20px; border-radius: 15px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 10px;
+    }
+    .marca { display: flex; align-items: center; gap: 10px; }
+    .marca img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
+    .marca strong { color: var(--rosa-oscuro); }
+    .btn-salir {
+      background: none; border: 1px solid #e05555; color: #e05555; cursor: pointer;
+      padding: 8px 14px; border-radius: 8px; font-weight: 600;
+    }
+
+    nav.tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 4px; }
+    nav.tabs a {
+      flex: none; text-decoration: none; color: var(--rosa-oscuro); background: white;
+      padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 2px solid transparent;
+    }
+    nav.tabs a.activo { border-color: var(--rosa-oscuro); background: var(--rosa); color: white; }
+
+    .estado-caja {
+      background: white; border-radius: 16px; padding: 22px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      margin-bottom: 22px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;
+    }
+    .estado-caja .info h2 { margin: 0 0 4px; font-size: 16px; color: var(--rosa-oscuro); }
+    .estado-caja .info p { margin: 0; font-size: 13px; color: var(--gris); }
+    .badge-estado { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+    .badge-abierta { background: #e6f7ea; color: var(--verde); }
+    .badge-cerrada { background: #f0f0f0; color: #888; }
+
+    .resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 22px; }
+    .stat-card { background: white; border-radius: 15px; padding: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .stat-card .valor { font-size: 22px; font-weight: 700; color: var(--rosa-oscuro); }
+    .stat-card .label { font-size: 12px; color: var(--gris); text-transform: uppercase; margin-top: 4px; }
+
+    .panel {
+      background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      margin-bottom: 22px;
+    }
+    .panel h2.seccion { font-size: 15px; color: var(--rosa-oscuro); margin: 0 0 16px; }
+
+    .fila-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .fila-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .campo { margin-bottom: 12px; }
+    .campo label { display: block; font-size: 12px; color: var(--gris); margin-bottom: 5px; font-weight: 600; }
+    .campo input {
+      width: 100%; padding: 10px 12px; border-radius: 9px; border: 1px solid #f0d0dc; font-size: 13px;
+    }
+
+    .btn-primario {
+      background: var(--rosa-oscuro); color: white; border: none; padding: 11px 20px;
+      border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 13px;
+    }
+    .btn-primario:hover { background: #c95d87; }
+    .btn-primario:disabled { opacity: 0.6; cursor: default; }
+    .btn-peligro {
+      background: #fde5ec; color: var(--rojo); border: none; padding: 11px 20px;
+      border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 13px;
+    }
+    .btn-peligro:hover { background: #e05555; color: white; }
+
+    .mensaje-error { color: var(--rojo); font-size: 12px; margin-top: 8px; display: none; }
+    .mensaje-ok { color: var(--verde); font-size: 12px; margin-top: 8px; display: none; }
+
+    h2.seccion-tabla { font-size: 15px; color: var(--rosa-oscuro); margin: 0 0 10px; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
+    th { color: var(--rosa-oscuro); font-size: 11px; text-transform: uppercase; background: #fdf1f5; }
+    .cargando { text-align: center; padding: 20px; color: var(--gris); font-size: 13px; }
+  </style>
+</head>
+<body>
+
+  <div class="contenedor">
+    <div class="topbar">
+      <div class="marca">
+        <img id="logoImg" src="" alt="" style="display:none;">
+        <strong id="appTienda">Mi Tienda de Ropa</strong> · <span id="appUser"></span>
+      </div>
+      <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
+    </div>
+
+    <nav class="tabs">
+      <a href="dashboard.html">🏠 Panel</a>
+      <a href="inventario.html">📦 Inventario</a>
+      <a href="ventas.html">🧾 Ventas</a>
+      <a href="clientes.html">👥 Clientes</a>
+      <a href="compras.html">🛒 Compras</a>
+      <a href="caja.html" class="activo">💰 Caja</a>
+      <a href="reportes.html">📊 Reportes</a>
+    </nav>
+
+    <div class="estado-caja" id="estadoCaja">
+      <div class="info">
+        <h2>Cargando estado de caja...</h2>
+        <p>&nbsp;</p>
+      </div>
+    </div>
+
+    <div class="panel" id="panelApertura" style="display:none;">
+      <h2 class="seccion">Abrir caja</h2>
+      <div class="campo">
+        <label>Saldo inicial en efectivo</label>
+        <input type="number" id="saldoInicial" min="0" step="0.01" placeholder="Ej: 100000">
+      </div>
+      <button class="btn-primario" id="btnAbrir" onclick="abrirCaja()">Abrir caja</button>
+      <div class="mensaje-error" id="errorApertura"></div>
+    </div>
+
+    <div class="panel" id="panelGasto" style="display:none;">
+      <h2 class="seccion">Registrar gasto</h2>
+      <div class="fila-2">
+        <div class="campo">
+          <label>Concepto</label>
+          <input type="text" id="gConcepto" placeholder="Ej: Pago servicios públicos">
+        </div>
+        <div class="campo">
+          <label>Valor</label>
+          <input type="number" id="gValor" min="0" step="0.01" placeholder="Ej: 50000">
+        </div>
+      </div>
+      <div class="campo">
+        <label>Observaciones</label>
+        <input type="text" id="gObservaciones" placeholder="Opcional">
+      </div>
+      <button class="btn-primario" id="btnGasto" onclick="registrarGasto()">Registrar gasto</button>
+      <div class="mensaje-error" id="errorGasto"></div>
+      <div class="mensaje-ok" id="okGasto"></div>
+    </div>
+
+    <div class="panel" id="panelCierre" style="display:none;">
+      <h2 class="seccion">Cerrar caja</h2>
+      <p style="font-size:13px; color:var(--gris); margin-top:0;">
+        Al cerrar la caja se calculará automáticamente el total de ventas en efectivo y gastos del día para obtener el saldo final.
+      </p>
+      <button class="btn-peligro" id="btnCerrar" onclick="cerrarCaja()">Cerrar caja del día</button>
+      <div class="mensaje-error" id="errorCierre"></div>
+    </div>
+
+    <h2 class="seccion-tabla">Gastos de hoy</h2>
+    <table>
+      <thead><tr><th>Fecha</th><th>Concepto</th><th>Valor</th><th>Responsable</th><th>Observaciones</th></tr></thead>
+      <tbody id="listaGastos"><tr><td colspan="5" class="cargando">Cargando gastos...</td></tr></tbody>
+    </table>
+  </div>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwF0T4dFM_SbfCxq6dBBSdQBL_xP2R64RZFJW-ly0AGiEWuRvVrIHXV7AQ2WrchaT_W/exec';
+
+    async function api(accion, params = {}, metodo = 'POST') {
+      const url = metodo === 'GET' ? `${API_URL}?action=${accion}&${new URLSearchParams(params)}` : API_URL;
+      const config = {
+        method: metodo,
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: metodo === 'GET' ? undefined : JSON.stringify({ action: accion, ...params })
+      };
+      const res = await fetch(url, config);
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error);
+      return json.data;
+    }
+
+    function getToken() { return localStorage.getItem('pos_token'); }
+
+    function cerrarSesion() {
+      const token = getToken();
+      if (token) api('logoutSesion', { token }).catch(() => {});
+      localStorage.removeItem('pos_token');
+      localStorage.removeItem('pos_usuario');
+      window.location.href = 'index.html';
+    }
+
+    async function requerirSesion() {
+      const token = getToken();
+      if (!token) { window.location.href = 'index.html'; return null; }
+      try {
+        const sesion = await api('validarSesion', { token }, 'GET');
+        document.getElementById('appUser').innerText = `${sesion.nombre} (${sesion.rol})`;
+        return sesion;
+      } catch (e) {
+        localStorage.removeItem('pos_token');
+        localStorage.removeItem('pos_usuario');
+        window.location.href = 'index.html';
+        return null;
+      }
+    }
+
+    async function cargarConfig() {
+      try {
+        const config = await api('getConfigPublica', {}, 'GET');
+        document.getElementById('appTienda').innerText = config.nombreEmpresa || 'Mi Tienda de Ropa';
+        if (config.logoUrl) {
+          const img = document.getElementById('logoImg');
+          img.src = config.logoUrl;
+          img.style.display = 'inline-block';
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    function fechaHoyStr() {
+      const hoy = new Date();
+      return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
+    }
+
+    async function cargarEstadoCaja() {
+      const box = document.getElementById('estadoCaja');
+      try {
+        const caja = await api('getCajaActual', {}, 'GET');
+        if (caja) {
+          box.innerHTML = `
+            <div class="info">
+              <h2>Caja abierta <span class="badge-estado badge-abierta">Abierta</span></h2>
+              <p>Fecha: ${caja.fecha} · Apertura: ${caja.horaApertura} · Abierta por: ${caja.usuario} · Saldo inicial: $${Number(caja.saldoInicial).toLocaleString('es-CO')}</p>
+            </div>
+          `;
+          document.getElementById('resumenStatsWrap')?.remove();
+          document.getElementById('panelApertura').style.display = 'none';
+          document.getElementById('panelGasto').style.display = 'block';
+          document.getElementById('panelCierre').style.display = 'block';
+          renderResumen(caja);
+        } else {
+          box.innerHTML = `
+            <div class="info">
+              <h2>No hay caja abierta <span class="badge-estado badge-cerrada">Cerrada</span></h2>
+              <p>Abre la caja para empezar a registrar ventas y gastos del día.</p>
+            </div>
+          `;
+          document.getElementById('panelApertura').style.display = 'block';
+          document.getElementById('panelGasto').style.display = 'none';
+          document.getElementById('panelCierre').style.display = 'none';
+          document.getElementById('resumenStatsWrap')?.remove();
+        }
+      } catch (e) {
+        box.innerHTML = `<div class="info"><h2>Error al cargar la caja</h2><p>${e.message}</p></div>`;
+      }
+    }
+
+    function renderResumen(caja) {
+      let wrap = document.getElementById('resumenStatsWrap');
+      if (!wrap) {
+        wrap = document.createElement('div');
+        wrap.id = 'resumenStatsWrap';
+        wrap.className = 'resumen';
+        document.getElementById('estadoCaja').insertAdjacentElement('afterend', wrap);
+      }
+      wrap.innerHTML = `
+        <div class="stat-card"><div class="valor">$${Number(caja.saldoInicial).toLocaleString('es-CO')}</div><div class="label">Saldo inicial</div></div>
+        <div class="stat-card"><div class="valor" id="valorGastosHoy">$0</div><div class="label">Gastos de hoy</div></div>
+      `;
+    }
+
+    async function abrirCaja() {
+      const errorBox = document.getElementById('errorApertura');
+      errorBox.style.display = 'none';
+      const saldoInicial = Number(document.getElementById('saldoInicial').value) || 0;
+
+      const btn = document.getElementById('btnAbrir');
+      btn.disabled = true;
+      btn.innerText = 'Abriendo...';
+
+      try {
+        await api('abrirCaja', { token: getToken(), saldoInicial });
+        document.getElementById('saldoInicial').value = '';
+        await cargarEstadoCaja();
+        await cargarGastos();
+      } catch (e) {
+        errorBox.innerText = e.message;
+        errorBox.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Abrir caja';
+      }
+    }
+
+    async function cerrarCaja() {
+      if (!confirm('¿Seguro que deseas cerrar la caja del día? Esta acción calculará el saldo final.')) return;
+      const errorBox = document.getElementById('errorCierre');
+      errorBox.style.display = 'none';
+
+      const btn = document.getElementById('btnCerrar');
+      btn.disabled = true;
+      btn.innerText = 'Cerrando...';
+
+      try {
+        const resultado = await api('cerrarCaja', { token: getToken() });
+        alert(`Caja cerrada.\nIngresos: $${Number(resultado.ingresos).toLocaleString('es-CO')}\nGastos: $${Number(resultado.gastos).toLocaleString('es-CO')}\nSaldo final: $${Number(resultado.saldoFinal).toLocaleString('es-CO')}`);
+        await cargarEstadoCaja();
+        await cargarGastos();
+      } catch (e) {
+        errorBox.innerText = e.message;
+        errorBox.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Cerrar caja del día';
+      }
+    }
+
+    async function registrarGasto() {
+      const errorBox = document.getElementById('errorGasto');
+      const okBox = document.getElementById('okGasto');
+      errorBox.style.display = 'none';
+      okBox.style.display = 'none';
+
+      const concepto = document.getElementById('gConcepto').value.trim();
+      const valor = Number(document.getElementById('gValor').value);
+      const observaciones = document.getElementById('gObservaciones').value.trim();
+
+      if (!concepto) {
+        errorBox.innerText = 'El concepto es obligatorio.';
+        errorBox.style.display = 'block';
+        return;
+      }
+      if (!valor || valor <= 0) {
+        errorBox.innerText = 'Ingresa un valor válido.';
+        errorBox.style.display = 'block';
+        return;
+      }
+
+      const btn = document.getElementById('btnGasto');
+      btn.disabled = true;
+      btn.innerText = 'Registrando...';
+
+      try {
+        await api('registrarGasto', { token: getToken(), gasto: { concepto, valor, observaciones } });
+        okBox.innerText = 'Gasto registrado correctamente.';
+        okBox.style.display = 'block';
+        document.getElementById('gConcepto').value = '';
+        document.getElementById('gValor').value = '';
+        document.getElementById('gObservaciones').value = '';
+        await cargarGastos();
+      } catch (e) {
+        errorBox.innerText = e.message;
+        errorBox.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Registrar gasto';
+      }
+    }
+
+    async function cargarGastos() {
+      const b = document.getElementById('listaGastos');
+      try {
+        const data = await api('getGastos', {}, 'GET');
+        const hoy = fechaHoyStr();
+        const deHoy = data.filter(g => String(g.fecha).startsWith(hoy));
+
+        const totalGastosHoy = deHoy.reduce((s, g) => s + Number(g.valor), 0);
+        const elValor = document.getElementById('valorGastosHoy');
+        if (elValor) elValor.innerText = '$' + totalGastosHoy.toLocaleString('es-CO');
+
+        if (deHoy.length === 0) {
+          b.innerHTML = '<tr><td colspan="5" class="cargando">No hay gastos registrados hoy.</td></tr>';
+          return;
+        }
+        b.innerHTML = deHoy.slice().reverse().map(g => `
+          <tr>
+            <td>${g.fecha}</td>
+            <td>${g.concepto}</td>
+            <td>$${Number(g.valor).toLocaleString('es-CO')}</td>
+            <td>${g.responsable || '-'}</td>
+            <td>${g.observaciones || '-'}</td>
+          </tr>
+        `).join('');
+      } catch (e) {
+        b.innerHTML = `<tr><td colspan="5" class="cargando">Error cargando gastos: ${e.message}</td></tr>`;
+      }
+    }
+
+    window.onload = async () => {
+      const sesion = await requerirSesion();
+      if (!sesion) return;
+      await cargarConfig();
+      await cargarEstadoCaja();
+      await cargarGastos();
+    };
+  </script>
+</body>
+</html>
