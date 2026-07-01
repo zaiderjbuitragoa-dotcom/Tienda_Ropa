@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Proveedores · Mi Tienda de Ropa</title>
+  <style>
+    :root {
+      --rosa: #f7a8c4;
+      --rosa-oscuro: #e0729e;
+      --blanco: #ffffff;
+      --gris: #8a8a8a;
+      --fondo: #fff5f8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0; background: var(--fondo); color: #333;
+    }
+    .contenedor { max-width: 1000px; width: 95%; margin: 20px auto; }
+
+    .topbar {
+      background: white; padding: 15px 20px; border-radius: 15px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 10px;
+    }
+    .marca { display: flex; align-items: center; gap: 10px; }
+    .marca img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
+    .marca strong { color: var(--rosa-oscuro); }
+    .btn-salir {
+      background: none; border: 1px solid #e05555; color: #e05555; cursor: pointer;
+      padding: 8px 14px; border-radius: 8px; font-weight: 600;
+    }
+
+    nav.tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 4px; }
+    nav.tabs a {
+      flex: none; text-decoration: none; color: var(--rosa-oscuro); background: white;
+      padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 2px solid transparent;
+    }
+    nav.tabs a.activo { border-color: var(--rosa-oscuro); background: var(--rosa); color: white; }
+
+    .barra-acciones {
+      display: flex; justify-content: space-between; align-items: center; gap: 10px;
+      margin-bottom: 18px; flex-wrap: wrap;
+    }
+    .buscador {
+      flex: 1; min-width: 200px; padding: 10px 14px; border-radius: 10px; border: 1px solid #f0d0dc;
+      font-size: 13px; background: white;
+    }
+    .btn-primario {
+      background: var(--rosa-oscuro); color: white; border: none; padding: 10px 18px;
+      border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 13px; white-space: nowrap;
+    }
+    .btn-primario:hover { background: #c95d87; }
+    .btn-primario:disabled { opacity: 0.6; cursor: default; }
+
+    .resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 22px; }
+    .stat-card { background: white; border-radius: 15px; padding: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .stat-card .valor { font-size: 22px; font-weight: 700; color: var(--rosa-oscuro); }
+    .stat-card .label { font-size: 12px; color: var(--gris); text-transform: uppercase; margin-top: 4px; }
+
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
+    th { color: var(--rosa-oscuro); font-size: 11px; text-transform: uppercase; background: #fdf1f5; }
+    .badge { padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-activo { background: #e6f7ea; color: #2a8a4a; }
+    .badge-inactivo { background: #f0f0f0; color: #888; }
+    .cargando { text-align: center; padding: 20px; color: var(--gris); font-size: 13px; }
+
+    .acciones-fila { display: flex; gap: 6px; }
+    .btn-mini {
+      border: none; padding: 6px 10px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: 600;
+    }
+    .btn-editar { background: #fdf1f5; color: var(--rosa-oscuro); }
+    .btn-desactivar { background: #fde5ec; color: #c0447a; }
+    .btn-editar:hover { background: var(--rosa); color: white; }
+    .btn-desactivar:hover { background: #e05555; color: white; }
+
+    .overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+      align-items: center; justify-content: center; padding: 15px; z-index: 100;
+    }
+    .overlay.abierto { display: flex; }
+    .modal {
+      background: white; border-radius: 18px; padding: 24px; width: 100%; max-width: 460px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto;
+    }
+    .modal h3 { margin: 0 0 16px; color: var(--rosa-oscuro); font-size: 17px; }
+    .campo { margin-bottom: 12px; }
+    .campo label { display: block; font-size: 12px; color: var(--gris); margin-bottom: 5px; font-weight: 600; }
+    .campo input, .campo select, .campo textarea {
+      width: 100%; padding: 10px 12px; border-radius: 9px; border: 1px solid #f0d0dc; font-size: 13px; font-family: inherit;
+    }
+    .fila-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .modal-acciones { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
+    .btn-cancelar {
+      background: #f0f0f0; color: #555; border: none; padding: 10px 16px; border-radius: 9px;
+      font-weight: 600; cursor: pointer; font-size: 13px;
+    }
+    .mensaje-error { color: #c0447a; font-size: 12px; margin-top: 8px; display: none; }
+  </style>
+</head>
+<body>
+
+  <div class="contenedor">
+    <div class="topbar">
+      <div class="marca">
+        <img id="logoImg" src="" alt="" style="display:none;">
+        <strong id="appTienda">Mi Tienda de Ropa</strong> · <span id="appUser"></span>
+      </div>
+      <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
+    </div>
+
+    <nav class="tabs">
+      <a href="dashboard.html">🏠 Panel</a>
+      <a href="inventario.html">📦 Inventario</a>
+      <a href="ventas.html">🧾 Ventas</a>
+      <a href="clientes.html">👥 Clientes</a>
+      <a href="compras.html">🛒 Compras</a>
+      <a href="proveedores.html" class="activo">🚚 Proveedores</a>
+      <a href="caja.html">💰 Caja</a>
+      <a href="reportes.html">📊 Reportes</a>
+    </nav>
+
+    <div class="resumen" id="resumenStats"></div>
+
+    <div class="barra-acciones">
+      <input type="text" class="buscador" id="buscador" placeholder="Buscar por empresa, contacto o teléfono..." oninput="filtrarProveedores()">
+      <button class="btn-primario" onclick="abrirModal()">+ Nuevo proveedor</button>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Empresa</th><th>Contacto</th><th>Teléfono</th><th>Correo</th><th>Ciudad</th><th>Estado</th><th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="listaProveedores"><tr><td colspan="7" class="cargando">Cargando proveedores...</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="overlay" id="overlayModal">
+    <div class="modal">
+      <h3 id="tituloModal">Nuevo proveedor</h3>
+      <input type="hidden" id="provId">
+      <div class="campo">
+        <label>Empresa *</label>
+        <input type="text" id="pEmpresa" placeholder="Ej: Textiles del Valle S.A.S">
+      </div>
+      <div class="fila-2">
+        <div class="campo">
+          <label>Contacto</label>
+          <input type="text" id="pContacto" placeholder="Nombre de la persona de contacto">
+        </div>
+        <div class="campo">
+          <label>Teléfono</label>
+          <input type="text" id="pTelefono" placeholder="Ej: 3001234567">
+        </div>
+      </div>
+      <div class="campo">
+        <label>Correo</label>
+        <input type="email" id="pCorreo" placeholder="correo@proveedor.com">
+      </div>
+      <div class="fila-2">
+        <div class="campo">
+          <label>Dirección</label>
+          <input type="text" id="pDireccion" placeholder="Dirección">
+        </div>
+        <div class="campo">
+          <label>Ciudad</label>
+          <input type="text" id="pCiudad" placeholder="Ej: Armenia">
+        </div>
+      </div>
+      <div class="campo">
+        <label>Observaciones</label>
+        <textarea id="pObservaciones" rows="2" placeholder="Opcional"></textarea>
+      </div>
+      <div class="campo">
+        <label>Estado</label>
+        <select id="pEstado">
+          <option value="Activo">Activo</option>
+          <option value="Inactivo">Inactivo</option>
+        </select>
+      </div>
+      <div class="mensaje-error" id="errorModal"></div>
+      <div class="modal-acciones">
+        <button class="btn-cancelar" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn-primario" id="btnGuardar" onclick="guardarProveedor()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwF0T4dFM_SbfCxq6dBBSdQBL_xP2R64RZFJW-ly0AGiEWuRvVrIHXV7AQ2WrchaT_W/exec';
+    let TODOS_LOS_PROVEEDORES = [];
+
+    async function api(accion, params = {}, metodo = 'POST') {
+      const url = metodo === 'GET' ? `${API_URL}?action=${accion}&${new URLSearchParams(params)}` : API_URL;
+      const config = {
+        method: metodo,
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: metodo === 'GET' ? undefined : JSON.stringify({ action: accion, ...params })
+      };
+      const res = await fetch(url, config);
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error);
+      return json.data;
+    }
+
+    function getToken() { return localStorage.getItem('pos_token'); }
+
+    function cerrarSesion() {
+      const token = getToken();
+      if (token) api('logoutSesion', { token }).catch(() => {});
+      localStorage.removeItem('pos_token');
+      localStorage.removeItem('pos_usuario');
+      window.location.href = 'index.html';
+    }
+
+    async function requerirSesion() {
+      const token = getToken();
+      if (!token) { window.location.href = 'index.html'; return null; }
+      try {
+        const sesion = await api('validarSesion', { token }, 'GET');
+        document.getElementById('appUser').innerText = `${sesion.nombre} (${sesion.rol})`;
+        return sesion;
+      } catch (e) {
+        localStorage.removeItem('pos_token');
+        localStorage.removeItem('pos_usuario');
+        window.location.href = 'index.html';
+        return null;
+      }
+    }
+
+    async function cargarConfig() {
+      try {
+        const config = await api('getConfigPublica', {}, 'GET');
+        document.getElementById('appTienda').innerText = config.nombreEmpresa || 'Mi Tienda de Ropa';
+        if (config.logoUrl) {
+          const img = document.getElementById('logoImg');
+          img.src = config.logoUrl;
+          img.style.display = 'inline-block';
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    function renderResumen(proveedores) {
+      const activos = proveedores.filter(p => p.estado !== 'Inactivo');
+      document.getElementById('resumenStats').innerHTML = `
+        <div class="stat-card"><div class="valor">${proveedores.length}</div><div class="label">Proveedores totales</div></div>
+        <div class="stat-card"><div class="valor">${activos.length}</div><div class="label">Proveedores activos</div></div>
+      `;
+    }
+
+    function renderTabla(proveedores) {
+      const b = document.getElementById('listaProveedores');
+      if (proveedores.length === 0) {
+        b.innerHTML = '<tr><td colspan="7" class="cargando">No se encontraron proveedores.</td></tr>';
+        return;
+      }
+      b.innerHTML = proveedores.map(p => {
+        const activo = p.estado !== 'Inactivo';
+        return `<tr>
+          <td>${p.empresa || ''}</td>
+          <td>${p.contacto || '-'}</td>
+          <td>${p.telefono || '-'}</td>
+          <td>${p.correo || '-'}</td>
+          <td>${p.ciudad || '-'}</td>
+          <td><span class="badge ${activo ? 'badge-activo' : 'badge-inactivo'}">${activo ? 'Activo' : 'Inactivo'}</span></td>
+          <td class="acciones-fila">
+            <button class="btn-mini btn-editar" onclick="editarProveedor(${p.id})">Editar</button>
+            ${activo ? `<button class="btn-mini btn-desactivar" onclick="desactivarProveedor(${p.id})">Desactivar</button>` : ''}
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    async function cargarProveedores() {
+      try {
+        const data = await api('getProveedores', {}, 'GET');
+        TODOS_LOS_PROVEEDORES = data;
+        renderResumen(data);
+        renderTabla(data);
+      } catch (e) {
+        document.getElementById('listaProveedores').innerHTML = `<tr><td colspan="7" class="cargando">Error cargando proveedores: ${e.message}</td></tr>`;
+      }
+    }
+
+    function filtrarProveedores() {
+      const q = document.getElementById('buscador').value.trim().toLowerCase();
+      if (!q) { renderTabla(TODOS_LOS_PROVEEDORES); return; }
+      const filtrados = TODOS_LOS_PROVEEDORES.filter(p => {
+        const texto = `${p.empresa || ''} ${p.contacto || ''} ${p.telefono || ''} ${p.correo || ''} ${p.ciudad || ''}`.toLowerCase();
+        return texto.includes(q);
+      });
+      renderTabla(filtrados);
+    }
+
+    function abrirModal() {
+      document.getElementById('tituloModal').innerText = 'Nuevo proveedor';
+      document.getElementById('provId').value = '';
+      document.getElementById('pEmpresa').value = '';
+      document.getElementById('pContacto').value = '';
+      document.getElementById('pTelefono').value = '';
+      document.getElementById('pCorreo').value = '';
+      document.getElementById('pDireccion').value = '';
+      document.getElementById('pCiudad').value = '';
+      document.getElementById('pObservaciones').value = '';
+      document.getElementById('pEstado').value = 'Activo';
+      document.getElementById('errorModal').style.display = 'none';
+      document.getElementById('overlayModal').classList.add('abierto');
+    }
+
+    function editarProveedor(id) {
+      const p = TODOS_LOS_PROVEEDORES.find(x => Number(x.id) === Number(id));
+      if (!p) return;
+      document.getElementById('tituloModal').innerText = 'Editar proveedor';
+      document.getElementById('provId').value = p.id;
+      document.getElementById('pEmpresa').value = p.empresa || '';
+      document.getElementById('pContacto').value = p.contacto || '';
+      document.getElementById('pTelefono').value = p.telefono || '';
+      document.getElementById('pCorreo').value = p.correo || '';
+      document.getElementById('pDireccion').value = p.direccion || '';
+      document.getElementById('pCiudad').value = p.ciudad || '';
+      document.getElementById('pObservaciones').value = p.observaciones || '';
+      document.getElementById('pEstado').value = p.estado === 'Inactivo' ? 'Inactivo' : 'Activo';
+      document.getElementById('errorModal').style.display = 'none';
+      document.getElementById('overlayModal').classList.add('abierto');
+    }
+
+    function cerrarModal() {
+      document.getElementById('overlayModal').classList.remove('abierto');
+    }
+
+    async function guardarProveedor() {
+      const errorBox = document.getElementById('errorModal');
+      errorBox.style.display = 'none';
+
+      const empresa = document.getElementById('pEmpresa').value.trim();
+      if (!empresa) {
+        errorBox.innerText = 'El nombre de la empresa es obligatorio.';
+        errorBox.style.display = 'block';
+        return;
+      }
+
+      const proveedor = {
+        id: document.getElementById('provId').value || undefined,
+        empresa: empresa,
+        contacto: document.getElementById('pContacto').value.trim(),
+        telefono: document.getElementById('pTelefono').value.trim(),
+        correo: document.getElementById('pCorreo').value.trim(),
+        direccion: document.getElementById('pDireccion').value.trim(),
+        ciudad: document.getElementById('pCiudad').value.trim(),
+        observaciones: document.getElementById('pObservaciones').value.trim(),
+        estado: document.getElementById('pEstado').value
+      };
+
+      const btn = document.getElementById('btnGuardar');
+      btn.disabled = true;
+      btn.innerText = 'Guardando...';
+
+      try {
+        await api('guardarProveedor', { token: getToken(), proveedor });
+        cerrarModal();
+        await cargarProveedores();
+      } catch (e) {
+        errorBox.innerText = e.message;
+        errorBox.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Guardar';
+      }
+    }
+
+    async function desactivarProveedor(id) {
+      if (!confirm('¿Desactivar este proveedor? Podrás reactivarlo después editándolo.')) return;
+      try {
+        await api('eliminarProveedor', { token: getToken(), id });
+        await cargarProveedores();
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    window.onload = async () => {
+      const sesion = await requerirSesion();
+      if (!sesion) return;
+      await cargarConfig();
+      await cargarProveedores();
+    };
+  </script>
+</body>
+</html>
