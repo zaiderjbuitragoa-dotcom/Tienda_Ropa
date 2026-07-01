@@ -16,17 +16,17 @@
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
       margin: 0; background: var(--fondo);
-      min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #333;
+      min-height: 100vh; color: #333;
     }
+    .centrado { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
 
-    /* TARJETA PRINCIPAL (ESTILO ORIGINAL) */
+    /* TARJETA LOGIN */
     .auth-card {
       background: var(--blanco);
       border-radius: 20px; padding: 36px 30px;
       box-shadow: 0 10px 40px rgba(224, 114, 158, 0.18);
       text-align: center; width: 100%; max-width: 380px;
     }
-
     .logo-box {
       width: 96px; height: 96px; margin: 0 auto 16px;
       border-radius: 50%; background: var(--fondo);
@@ -35,105 +35,137 @@
       overflow: hidden; font-size: 40px;
     }
     .logo-box img { width: 100%; height: 100%; object-fit: cover; }
-    
     h1 { font-size: 20px; margin: 4px 0; color: var(--rosa-oscuro); font-weight: 700; }
     .subtitulo { font-size: 13px; color: var(--gris); margin-bottom: 20px; }
-
     input, select {
       width: 100%; padding: 12px; margin-bottom: 12px;
       border: 1.5px solid #f0d5e0; border-radius: 10px; outline: none; font-size: 14px;
     }
-    input:focus { border-color: var(--rosa-oscuro); }
-
+    input:focus, select:focus { border-color: var(--rosa-oscuro); }
     .btn-principal {
       width: 100%; padding: 12px;
       background: linear-gradient(135deg, var(--rosa), var(--rosa-oscuro));
       color: white; border: none; border-radius: 10px;
-      font-weight: 600; cursor: pointer; transition: 0.2s;
+      font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 14px;
     }
     .btn-principal:hover { opacity: 0.9; }
     .btn-principal:disabled { opacity: 0.6; cursor: not-allowed; }
-
     .mensaje {
       font-size: 13px; padding: 10px; border-radius: 8px;
       margin-bottom: 15px; display: none; text-align: left;
     }
     .error { background: #fde5ec; color: #c0447a; display: block; }
     .ok { background: #e6f7ea; color: #2a8a4a; display: block; }
-
-    .oculto { display: none; }
+    .oculto { display: none !important; }
     .switch-modo { margin-top: 15px; font-size: 13px; color: var(--gris); }
     .switch-modo a { color: var(--rosa-oscuro); font-weight: 600; text-decoration: none; cursor: pointer; }
 
     /* DASHBOARD */
-    #vistaApp { max-width: 900px; width: 95%; margin: 20px; }
+    #vistaApp { max-width: 1000px; width: 95%; margin: 20px auto; }
     .topbar {
-      background: white; padding: 15px; border-radius: 15px;
+      background: white; padding: 15px 20px; border-radius: 15px;
       display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 10px;
     }
-    table { width: 100%; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; }
-    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
-    th { color: var(--rosa-oscuro); font-size: 12px; text-transform: uppercase; }
+    .btn-salir {
+      background: none; border: 1px solid #e05555; color: #e05555; cursor: pointer;
+      padding: 8px 14px; border-radius: 8px; font-weight: 600;
+    }
+    .modulos {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 15px; margin-bottom: 25px;
+    }
+    .modulo-card {
+      background: white; border-radius: 16px; padding: 22px 16px; text-align: center;
+      text-decoration: none; color: #333; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      transition: 0.15s; border: 2px solid transparent;
+    }
+    .modulo-card:hover { transform: translateY(-3px); border-color: var(--rosa); }
+    .modulo-icono { font-size: 32px; margin-bottom: 8px; }
+    .modulo-nombre { font-weight: 700; color: var(--rosa-oscuro); font-size: 14px; }
+
+    .resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .stat-card { background: white; border-radius: 15px; padding: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .stat-card .valor { font-size: 22px; font-weight: 700; color: var(--rosa-oscuro); }
+    .stat-card .label { font-size: 12px; color: var(--gris); text-transform: uppercase; margin-top: 4px; }
+
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
+    th { color: var(--rosa-oscuro); font-size: 11px; text-transform: uppercase; background: #fdf1f5; }
+    .badge { padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-bajo { background: #fde5ec; color: #c0447a; }
+    .badge-ok { background: #e6f7ea; color: #2a8a4a; }
+    .cargando { text-align: center; padding: 20px; color: var(--gris); font-size: 13px; }
   </style>
 </head>
 <body>
 
-  <div id="vistaAuth" class="auth-card">
-    <div class="logo-box" id="logoWrap">👗</div>
-    <h1 id="txtNombreTienda">Mi Tienda de Ropa</h1>
-    <div class="subtitulo" id="txtSub">Ingresa a tu cuenta</div>
+  <div id="vistaAuth" class="centrado">
+    <div class="auth-card">
+      <div class="logo-box" id="logoWrap">👗</div>
+      <h1 id="txtNombreTienda">Mi Tienda de Ropa</h1>
+      <div class="subtitulo" id="txtSub">Ingresa a tu cuenta</div>
 
-    <div id="msg" class="mensaje"></div>
+      <div id="msg" class="mensaje"></div>
 
-    <!-- Login -->
-    <div id="formLogin">
-      <input type="text" id="lUser" placeholder="Usuario">
-      <input type="password" id="lPass" placeholder="Contraseña">
-      <button class="btn-principal" id="btnLogin" onclick="ejecutarLogin()">Ingresar</button>
-      <div class="switch-modo">¿No tienes cuenta? <a onclick="toggle(true)">Crear usuario</a></div>
-    </div>
+      <div id="formLogin">
+        <input type="text" id="lUser" placeholder="Usuario" autocomplete="username">
+        <input type="password" id="lPass" placeholder="Contraseña" autocomplete="current-password">
+        <button class="btn-principal" id="btnLogin" onclick="ejecutarLogin()">Ingresar</button>
+        <div class="switch-modo">¿No tienes cuenta? <a onclick="toggle(true)">Crear usuario</a></div>
+      </div>
 
-    <!-- Registro -->
-    <div id="formReg" class="oculto">
-      <input type="text" id="rNom" placeholder="Nombre completo">
-      <input type="text" id="rUser" placeholder="Nombre de usuario">
-      <input type="password" id="rPass" placeholder="Contraseña">
-      <select id="rRol">
-        <option value="Vendedor">Vendedor</option>
-        <option value="Admin">Administrador</option>
-      </select>
-      <button class="btn-principal" id="btnReg" onclick="ejecutarRegistro()">Registrarme</button>
-      <div class="switch-modo">¿Ya tienes cuenta? <a onclick="toggle(false)">Iniciar sesión</a></div>
+      <div id="formReg" class="oculto">
+        <input type="text" id="rNom" placeholder="Nombre completo">
+        <input type="text" id="rUser" placeholder="Nombre de usuario">
+        <input type="password" id="rPass" placeholder="Contraseña">
+        <select id="rRol">
+          <option value="Vendedor">Vendedor</option>
+          <option value="Cajero">Cajero</option>
+          <option value="Admin">Administrador</option>
+        </select>
+        <button class="btn-principal" id="btnReg" onclick="ejecutarRegistro()">Registrarme</button>
+        <div class="switch-modo">¿Ya tienes cuenta? <a onclick="toggle(false)">Iniciar sesión</a></div>
+      </div>
     </div>
   </div>
 
-  <!-- DASHBOARD -->
   <div id="vistaApp" class="oculto">
     <div class="topbar">
       <div>
-        <strong style="color:var(--rosa-oscuro)" id="appTienda"></strong> | <span id="appUser"></span>
+        <strong style="color:var(--rosa-oscuro)" id="appTienda"></strong> · <span id="appUser"></span>
       </div>
-      <button onclick="location.reload()" style="background:none; border:1px solid red; color:red; cursor:pointer; padding:5px 10px; border-radius:8px;">Salir</button>
+      <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
     </div>
+
+    <div class="modulos">
+      <a class="modulo-card" href="inventario.html"><div class="modulo-icono">📦</div><div class="modulo-nombre">Inventario</div></a>
+      <a class="modulo-card" href="ventas.html"><div class="modulo-icono">🧾</div><div class="modulo-nombre">Ventas</div></a>
+      <a class="modulo-card" href="clientes.html"><div class="modulo-icono">👥</div><div class="modulo-nombre">Clientes</div></a>
+      <a class="modulo-card" href="compras.html"><div class="modulo-icono">🛒</div><div class="modulo-nombre">Compras</div></a>
+      <a class="modulo-card" href="caja.html"><div class="modulo-icono">💰</div><div class="modulo-nombre">Caja</div></a>
+      <a class="modulo-card" href="reportes.html"><div class="modulo-icono">📊</div><div class="modulo-nombre">Reportes</div></a>
+    </div>
+
+    <div class="resumen" id="resumenStats"></div>
+
     <table>
-      <thead><tr><th>Producto</th><th>Categoría</th><th>Stock</th><th>Precio</th></tr></thead>
-      <tbody id="listaInv"></tbody>
+      <thead><tr><th>Producto</th><th>Categoría</th><th>Stock</th><th>Precio</th><th>Estado</th></tr></thead>
+      <tbody id="listaInv"><tr><td colspan="5" class="cargando">Cargando inventario...</td></tr></tbody>
     </table>
   </div>
 
   <script>
+    // ⚠️ Reemplaza esta URL por la de tu propia implementación de Apps Script (termina en /exec)
     const API_URL = 'https://script.google.com/macros/s/AKfycbwF0T4dFM_SbfCxq6dBBSdQBL_xP2R64RZFJW-ly0AGiEWuRvVrIHXV7AQ2WrchaT_W/exec';
 
     async function api(accion, params = {}, metodo = 'POST') {
       const url = metodo === 'GET' ? `${API_URL}?action=${accion}&${new URLSearchParams(params)}` : API_URL;
       const config = {
-        method: 'POST',
+        method: metodo,
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: accion, ...params })
+        body: metodo === 'GET' ? undefined : JSON.stringify({ action: accion, ...params })
       };
-      if (metodo === 'GET') { delete config.body; config.method = 'GET'; }
-
       const res = await fetch(url, config);
       const json = await res.json();
       if (!json.ok) throw new Error(json.error);
@@ -156,14 +188,12 @@
     async function ejecutarLogin() {
       const usuario = document.getElementById('lUser').value.trim();
       const password = document.getElementById('lPass').value;
-      if (!usuario || !password) {
-        mostrarMensaje('Escribe tu usuario y contraseña', 'error');
-        return;
-      }
+      if (!usuario || !password) { mostrarMensaje('Escribe tu usuario y contraseña', 'error'); return; }
       const btn = document.getElementById('btnLogin');
       btn.disabled = true; btn.innerText = 'Ingresando...';
       try {
         const user = await api('login', { usuario, password });
+        guardarSesion(user);
         entrarApp(user);
       } catch (e) {
         mostrarMensaje(e.message, 'error');
@@ -177,10 +207,7 @@
       const usuario = document.getElementById('rUser').value.trim();
       const password = document.getElementById('rPass').value;
       const rol = document.getElementById('rRol').value;
-      if (!nombre || !usuario || !password) {
-        mostrarMensaje('Completa todos los campos', 'error');
-        return;
-      }
+      if (!nombre || !usuario || !password) { mostrarMensaje('Completa todos los campos', 'error'); return; }
       const btn = document.getElementById('btnReg');
       btn.disabled = true; btn.innerText = 'Creando...';
       try {
@@ -194,6 +221,19 @@
       }
     }
 
+    function guardarSesion(u) {
+      localStorage.setItem('pos_token', u.token);
+      localStorage.setItem('pos_usuario', JSON.stringify(u));
+    }
+
+    function cerrarSesion() {
+      const token = localStorage.getItem('pos_token');
+      if (token) api('logoutSesion', { token }).catch(() => {});
+      localStorage.removeItem('pos_token');
+      localStorage.removeItem('pos_usuario');
+      location.reload();
+    }
+
     function entrarApp(u) {
       document.getElementById('vistaAuth').classList.add('oculto');
       document.getElementById('vistaApp').classList.remove('oculto');
@@ -203,20 +243,59 @@
     }
 
     async function cargarInv() {
-      const data = await api('getInventario', {}, 'GET');
-      const b = document.getElementById('listaInv');
-      b.innerHTML = data.map(p => `<tr><td>${p.producto}</td><td>${p.categoria}</td><td>${p.stock}</td><td>$${p.precio}</td></tr>`).join('');
+      try {
+        const data = await api('getInventario', {}, 'GET');
+        const activos = data.filter(p => p.estado !== 'Inactivo');
+        const stockBajo = activos.filter(p => Number(p.stock) <= Number(p.stockMinimo));
+        const valorInventario = activos.reduce((s, p) => s + Number(p.stock) * Number(p.precio), 0);
+
+        document.getElementById('resumenStats').innerHTML = `
+          <div class="stat-card"><div class="valor">${activos.length}</div><div class="label">Productos activos</div></div>
+          <div class="stat-card"><div class="valor">${stockBajo.length}</div><div class="label">Con stock bajo</div></div>
+          <div class="stat-card"><div class="valor">$${valorInventario.toLocaleString('es-CO')}</div><div class="label">Valor en inventario</div></div>
+        `;
+
+        const b = document.getElementById('listaInv');
+        if (activos.length === 0) {
+          b.innerHTML = '<tr><td colspan="5" class="cargando">Aún no hay productos. Agrégalos desde el módulo Inventario.</td></tr>';
+          return;
+        }
+        b.innerHTML = activos.slice(0, 8).map(p => {
+          const bajo = Number(p.stock) <= Number(p.stockMinimo);
+          return `<tr>
+            <td>${p.nombre}</td>
+            <td>${p.categoria || '-'}</td>
+            <td><span class="badge ${bajo ? 'badge-bajo' : 'badge-ok'}">${p.stock}</span></td>
+            <td>$${Number(p.precio).toLocaleString('es-CO')}</td>
+            <td>${p.estado || 'Activo'}</td>
+          </tr>`;
+        }).join('');
+      } catch (e) {
+        document.getElementById('listaInv').innerHTML = `<tr><td colspan="5" class="cargando">Error cargando inventario: ${e.message}</td></tr>`;
+      }
+    }
+
+    async function intentarSesionGuardada() {
+      const token = localStorage.getItem('pos_token');
+      if (!token) return;
+      try {
+        const sesion = await api('validarSesion', { token }, 'GET');
+        entrarApp(sesion);
+      } catch (e) {
+        localStorage.removeItem('pos_token');
+        localStorage.removeItem('pos_usuario');
+      }
     }
 
     window.onload = async () => {
       try {
         const config = await api('getConfigPublica', {}, 'GET');
-        // OJO: el backend devuelve "nombreEmpresa" y "logoUrl" (no "nombre" / "logo")
         document.getElementById('txtNombreTienda').innerText = config.nombreEmpresa || 'Mi Tienda de Ropa';
-        if (config.logoUrl) document.getElementById('logoWrap').innerHTML = `<img src="${config.logoUrl}">`;
+        if (config.logoUrl) document.getElementById('logoWrap').innerHTML = `<img src="${config.logoUrl}" alt="Logo">`;
       } catch (e) {
         console.error('Error cargando configuración:', e);
       }
+      await intentarSesionGuardada();
     };
   </script>
 </body>
