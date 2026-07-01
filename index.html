@@ -3,169 +3,195 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>POS - Mi Tienda de Ropa</title>
+  <title>Mi Tienda de Ropa</title>
   <style>
-    :root { --rosa: #f7a8c4; --rosa-oscuro: #e0729e; --blanco: #ffffff; --gris: #8a8a8a; --fondo: #fff5f8; }
-    * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-    body { margin: 0; background: var(--fondo); display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+    :root {
+      --rosa: #f7a8c4;
+      --rosa-oscuro: #e0729e;
+      --blanco: #ffffff;
+      --gris: #8a8a8a;
+      --fondo: #fff5f8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0; background: var(--fondo);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #333;
+    }
+
+    /* TARJETA PRINCIPAL (ESTILO ORIGINAL) */
+    .auth-card {
+      background: var(--blanco);
+      border-radius: 20px; padding: 36px 30px;
+      box-shadow: 0 10px 40px rgba(224, 114, 158, 0.18);
+      text-align: center; width: 100%; max-width: 380px;
+    }
+
+    .logo-box {
+      width: 96px; height: 96px; margin: 0 auto 16px;
+      border-radius: 50%; background: var(--fondo);
+      border: 3px solid var(--rosa);
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; font-size: 40px;
+    }
+    .logo-box img { width: 100%; height: 100%; object-fit: cover; }
     
-    .card { background: white; border-radius: 20px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-    h1 { color: var(--rosa-oscuro); margin: 0 0 10px; font-size: 24px; }
-    .sub { color: var(--gris); font-size: 14px; margin-bottom: 20px; }
-    
-    input, select { width: 100%; padding: 12px; margin-bottom: 15px; border: 1.5px solid #f0d5e0; border-radius: 10px; outline: none; font-size: 15px; }
-    button { width: 100%; padding: 12px; background: var(--rosa-oscuro); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-    button:hover { opacity: 0.8; }
-    
-    .msg { padding: 10px; border-radius: 10px; margin-bottom: 15px; font-size: 14px; display: none; }
+    h1 { font-size: 20px; margin: 4px 0; color: var(--rosa-oscuro); font-weight: 700; }
+    .subtitulo { font-size: 13px; color: var(--gris); margin-bottom: 20px; }
+
+    input, select {
+      width: 100%; padding: 12px; margin-bottom: 12px;
+      border: 1.5px solid #f0d5e0; border-radius: 10px; outline: none; font-size: 14px;
+    }
+    input:focus { border-color: var(--rosa-oscuro); }
+
+    .btn-principal {
+      width: 100%; padding: 12px;
+      background: linear-gradient(135deg, var(--rosa), var(--rosa-oscuro));
+      color: white; border: none; border-radius: 10px;
+      font-weight: 600; cursor: pointer; transition: 0.2s;
+    }
+    .btn-principal:hover { opacity: 0.9; }
+
+    .mensaje {
+      font-size: 13px; padding: 10px; border-radius: 8px;
+      margin-bottom: 15px; display: none; text-align: left;
+    }
     .error { background: #fde5ec; color: #c0447a; display: block; }
     .ok { background: #e6f7ea; color: #2a8a4a; display: block; }
-    
-    .oculto { display: none; }
-    .link { margin-top: 15px; font-size: 13px; color: var(--gris); }
-    .link a { color: var(--rosa-oscuro); cursor: pointer; font-weight: bold; text-decoration: none; }
 
-    /* Estilos del Dashboard */
-    #vistaApp { max-width: 900px; width: 95%; }
-    .tabla-box { background: white; padding: 20px; border-radius: 15px; margin-top: 20px; overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: 12px; border-bottom: 1px solid #eee; }
-    th { color: var(--gris); font-size: 12px; text-transform: uppercase; }
+    .oculto { display: none; }
+    .switch-modo { margin-top: 15px; font-size: 13px; color: var(--gris); }
+    .switch-modo a { color: var(--rosa-oscuro); font-weight: 600; text-decoration: none; cursor: pointer; }
+
+    /* DASHBOARD */
+    #vistaApp { max-width: 900px; width: 95%; margin: 20px; }
+    .topbar {
+      background: white; padding: 15px; border-radius: 15px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+    th { color: var(--rosa-oscuro); font-size: 12px; text-transform: uppercase; }
   </style>
 </head>
 <body>
 
-  <!-- PANTALLA DE ACCESO -->
-  <div id="vistaAuth" class="card">
-    <h1 id="txtTienda">Mi Tienda</h1>
-    <div class="sub" id="txtSub">Ingresa a tu cuenta</div>
-    <div id="mensaje" class="msg"></div>
+  <div id="vistaAuth" class="auth-card">
+    <div class="logo-box" id="logoWrap">👗</div>
+    <h1 id="txtNombreTienda">Mi Tienda de Ropa</h1>
+    <div class="subtitulo" id="txtSub">Ingresa a tu cuenta</div>
+
+    <div id="msg" class="mensaje"></div>
 
     <!-- Login -->
     <div id="formLogin">
       <input type="text" id="lUser" placeholder="Usuario">
       <input type="password" id="lPass" placeholder="Contraseña">
-      <button onclick="login()">Ingresar</button>
-      <div class="link">¿No tienes cuenta? <a onclick="toggle(true)">Crear usuario</a></div>
+      <button class="btn-principal" onclick="ejecutarLogin()">Ingresar</button>
+      <div class="switch-modo">¿No tienes cuenta? <a onclick="toggle(true)">Crear usuario</a></div>
     </div>
 
     <!-- Registro -->
     <div id="formReg" class="oculto">
-      <input type="text" id="rNom" placeholder="Nombre Completo">
-      <input type="text" id="rUser" placeholder="Nombre de Usuario">
+      <input type="text" id="rNom" placeholder="Nombre completo">
+      <input type="text" id="rUser" placeholder="Nombre de usuario">
       <input type="password" id="rPass" placeholder="Contraseña">
       <select id="rRol">
         <option value="Vendedor">Vendedor</option>
         <option value="Admin">Administrador</option>
       </select>
-      <button onclick="registrar()">Registrar Usuario</button>
-      <div class="link">¿Ya tienes cuenta? <a onclick="toggle(false)">Iniciar sesión</a></div>
+      <button class="btn-principal" onclick="ejecutarRegistro()">Registrarme</button>
+      <div class="switch-modo">¿Ya tienes cuenta? <a onclick="toggle(false)">Iniciar sesión</a></div>
     </div>
   </div>
 
-  <!-- PANTALLA DE LA APP -->
+  <!-- DASHBOARD -->
   <div id="vistaApp" class="oculto">
-    <div class="card" style="max-width: 100%; text-align: left;">
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <div>
-          <h2 style="margin:0; color: var(--rosa-oscuro);">Hola, <span id="uNombre"></span></h2>
-          <span id="uRol" style="color: var(--gris); font-size: 14px;"></span>
-        </div>
-        <button onclick="location.reload()" style="width: auto; padding: 8px 15px;">Cerrar Sesión</button>
+    <div class="topbar">
+      <div>
+        <strong style="color:var(--rosa-oscuro)" id="appTienda"></strong> | <span id="appUser"></span>
       </div>
+      <button onclick="location.reload()" style="background:none; border:1px solid red; color:red; cursor:pointer; padding:5px 10px; border-radius:8px;">Salir</button>
     </div>
-
-    <div class="tabla-box">
-      <h3 style="color: var(--rosa-oscuro);">📦 Inventario de Productos</h3>
-      <table>
-        <thead>
-          <tr><th>Producto</th><th>Categoría</th><th>Stock</th><th>Precio</th></tr>
-        </thead>
-        <tbody id="listaInv">
-          <tr><td colspan="4">Cargando datos...</td></tr>
-        </tbody>
-      </table>
-    </div>
+    <table>
+      <thead><tr><th>Producto</th><th>Categoría</th><th>Stock</th><th>Precio</th></tr></thead>
+      <tbody id="listaInv"></tbody>
+    </table>
   </div>
 
   <script>
-    // URL DE TU SCRIPT DE GOOGLE
-    const URL = 'https://script.google.com/macros/s/AKfycbwF0T4dFM_SbfCxq6dBBSdQBL_xP2R64RZFJW-ly0AGiEWuRvVrIHXV7AQ2WrchaT_W/exec';
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwF0T4dFM_SbfCxq6dBBSdQBL_xP2R64RZFJW-ly0AGiEWuRvVrIHXV7AQ2WrchaT_W/exec';
 
-    async function api(accion, datos = {}, metodo = 'POST') {
-      const opciones = {
+    async function api(accion, params = {}, metodo = 'POST') {
+      const url = metodo === 'GET' ? `${API_URL}?action=${accion}&${new URLSearchParams(params)}` : API_URL;
+      const config = {
         method: 'POST',
-        body: JSON.stringify({ action: accion, ...datos })
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: accion, ...params })
       };
-      // Si es GET, enviamos parámetros en la URL
-      const link = metodo === 'GET' ? `${URL}?action=${accion}&${new URLSearchParams(datos)}` : URL;
-      if(metodo === 'GET') delete opciones.body, opciones.method = 'GET';
+      if (metodo === 'GET') delete config.body, config.method = 'GET';
 
-      const res = await fetch(link, opciones);
+      const res = await fetch(url, config);
       const json = await res.json();
       if (!json.ok) throw new Error(json.error);
       return json.data;
     }
 
-    function toggle(reg) {
-      document.getElementById('formLogin').classList.toggle('oculto', reg);
-      document.getElementById('formReg').classList.toggle('oculto', !reg);
-      document.getElementById('txtSub').innerText = reg ? 'Crea tu cuenta de vendedor' : 'Ingresa a tu cuenta';
+    function toggle(esReg) {
+      document.getElementById('formLogin').classList.toggle('oculto', esReg);
+      document.getElementById('formReg').classList.toggle('oculto', !esReg);
+      document.getElementById('txtSub').innerText = esReg ? 'Crea tu cuenta de vendedor' : 'Ingresa a tu cuenta';
+      document.getElementById('msg').style.display = 'none';
     }
 
-    function msg(t, tipo) {
-      const e = document.getElementById('mensaje');
-      e.innerText = t;
-      e.className = 'msg ' + tipo;
-    }
-
-    async function login() {
+    async function ejecutarLogin() {
       const usuario = document.getElementById('lUser').value;
       const password = document.getElementById('lPass').value;
       try {
-        msg("Verificando...", "ok");
         const user = await api('login', { usuario, password });
-        entrar(user);
-      } catch (e) { msg(e.message, "error"); }
+        entrarApp(user);
+      } catch (e) {
+        const m = document.getElementById('msg'); m.innerText = e.message; m.className = 'mensaje error';
+      }
     }
 
-    async function registrar() {
+    async function ejecutarRegistro() {
       const nombre = document.getElementById('rNom').value;
       const usuario = document.getElementById('rUser').value;
       const password = document.getElementById('rPass').value;
       const rol = document.getElementById('rRol').value;
       try {
-        msg("Guardando...", "ok");
         await api('registrarUsuario', { nombre, usuario, password, rol });
-        msg("¡Creado! Ya puedes entrar.", "ok");
+        const m = document.getElementById('msg'); m.innerText = "¡Creado! Ya puedes entrar."; m.className = 'mensaje ok';
         toggle(false);
-      } catch (e) { msg(e.message, "error"); }
+      } catch (e) {
+        const m = document.getElementById('msg'); m.innerText = e.message; m.className = 'mensaje error';
+      }
     }
 
-    function entrar(user) {
+    function entrarApp(u) {
       document.getElementById('vistaAuth').classList.add('oculto');
       document.getElementById('vistaApp').classList.remove('oculto');
-      document.getElementById('uNombre').innerText = user.nombre;
-      document.getElementById('uRol').innerText = "Rol: " + user.rol;
+      document.getElementById('appTienda').innerText = document.getElementById('txtNombreTienda').innerText;
+      document.getElementById('appUser').innerText = `${u.nombre} (${u.rol})`;
       cargarInv();
     }
 
     async function cargarInv() {
       const data = await api('getInventario', {}, 'GET');
-      const body = document.getElementById('listaInv');
-      body.innerHTML = data.length ? '' : '<tr><td colspan="4">No hay productos.</td></tr>';
-      data.forEach(p => {
-        body.innerHTML += `<tr><td>${p.producto}</td><td>${p.categoria}</td><td>${p.stock}</td><td>$${p.precio}</td></tr>`;
-      });
+      const b = document.getElementById('listaInv');
+      b.innerHTML = data.map(p => `<tr><td>${p.producto}</td><td>${p.categoria}</td><td>${p.stock}</td><td>$${p.precio}</td></tr>`).join('');
     }
 
-    // Al cargar la página
     window.onload = async () => {
       try {
-        const c = await api('getConfigPublica', {}, 'GET');
-        document.getElementById('txtTienda').innerText = c.nombreEmpresa;
+        const config = await api('getConfigPublica', {}, 'GET');
+        document.getElementById('txtNombreTienda').innerText = config.nombre;
+        if(config.logo) document.getElementById('logoWrap').innerHTML = `<img src="${config.logo}">`;
       } catch(e) {}
-    }
+    };
   </script>
 </body>
 </html>
