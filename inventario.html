@@ -402,6 +402,30 @@
       preview.style.display = 'none';
     }
 
+    // Dibuja el bitmap en un canvas rotado 'grados' (0/90/180/270), opcionalmente escalado
+    // a un ancho/alto máximo (maxDim) y con un pequeño realce de contraste para ayudar al OCR.
+    function prepararCanvasRotado(bitmap, grados, maxDim) {
+      const w = bitmap.width, h = bitmap.height;
+      let escala = 1;
+      if (maxDim) {
+        const mayor = Math.max(w, h);
+        if (mayor > maxDim) escala = maxDim / mayor;
+      }
+      const wEsc = w * escala, hEsc = h * escala;
+      const canvas = document.createElement('canvas');
+      if (grados === 90 || grados === 270) {
+        canvas.width = hEsc; canvas.height = wEsc;
+      } else {
+        canvas.width = wEsc; canvas.height = hEsc;
+      }
+      const ctx = canvas.getContext('2d');
+      try { ctx.filter = 'grayscale(1) contrast(1.25)'; } catch (e) {}
+      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.rotate(grados * Math.PI / 180);
+      ctx.drawImage(bitmap, -wEsc / 2, -hEsc / 2, wEsc, hEsc);
+      return canvas;
+    }
+
     async function procesarFotoEtiqueta(event) {
       const file = event.target.files[0];
       if (!file) return;
@@ -410,30 +434,57 @@
       const preview = document.getElementById('ocrPreview');
       preview.src = URL.createObjectURL(file);
       preview.style.display = 'inline-block';
-      estadoEl.innerText = 'Leyendo etiqueta...';
+      estadoEl.innerText = 'Preparando imagen...';
 
-      // 1) Código de barras: usamos el lector nativo del navegador si está disponible (más preciso que el OCR)
+      let bitmap;
       try {
-        if ('BarcodeDetector' in window) {
-          const formatos = await BarcodeDetector.getSupportedFormats();
-          const detector = new BarcodeDetector({ formats: formatos });
-          const bitmap = await createImageBitmap(file);
-          const codigos = await detector.detect(bitmap);
-          if (codigos.length > 0) {
-            document.getElementById('pCodigoBarras').value = codigos[0].rawValue;
-          }
-        }
+        bitmap = await createImageBitmap(file);
       } catch (e) {
-        console.warn('No se pudo leer el código de barras automáticamente:', e);
+        estadoEl.innerText = 'No se pudo abrir la imagen. Intenta con otra foto.';
+        return;
       }
 
-      // 2) Texto de la etiqueta con OCR (Tesseract.js), funciona sin conexión a ningún servidor propio
-      try {
-        if (typeof Tesseract === 'undefined') {
-          estadoEl.innerText = 'No se pudo cargar el lector de texto. Completa los datos manualmente.';
-          return;
+      const angulos = [0, 90, 180, 270];
+
+      // 1) Código de barras: probamos las 4 orientaciones, porque si la foto viene girada
+      //    (vertical, cabeza abajo, etc.) el lector nativo puede no encontrarlo a la primera.
+      if ('BarcodeDetector' in window) {
+        try {
+          const formatos = await BarcodeDetector.getSupportedFormats();
+          const detector = new BarcodeDetector({ formats: formatos });
+          for (const angulo of angulos) {
+            const canvasRot = prepararCanvasRotado(bitmap, angulo, null);
+            const codigos = await detector.detect(canvasRot);
+            if (codigos.length > 0) {
+              document.getElementById('pCodigoBarras').value = codigos[0].rawValue;
+              break;
+            }
+          }
+        } catch (e) {
+          console.warn('No se pudo leer el código de barras automáticamente:', e);
         }
-        const resultado = await Tesseract.recognize(file, 'spa+eng', {
+      }
+
+      if (typeof Tesseract === 'undefined') {
+        estadoEl.innerText = 'No se pudo cargar el lector de texto. Completa los datos manualmente.';
+        return;
+      }
+
+      // 2) Texto de la etiqueta: probamos las 4 orientaciones en baja resolución para
+      //    encontrar cuál da mejor confianza de lectura, y esa la volvemos a leer en buena calidad.
+      try {
+        let mejorAngulo = 0, mejorConfianza = -1;
+        for (const angulo of angulos) {
+          estadoEl.innerText = `Buscando la orientación correcta (${angulo}°)...`;
+          const canvasPrueba = prepararCanvasRotado(bitmap, angulo, 700);
+          const prueba = await Tesseract.recognize(canvasPrueba, 'spa+eng');
+          const confianza = prueba.data.confidence || 0;
+          if (confianza > mejorConfianza) { mejorConfianza = confianza; mejorAngulo = angulo; }
+        }
+
+        estadoEl.innerText = 'Leyendo etiqueta...';
+        const canvasFinal = prepararCanvasRotado(bitmap, mejorAngulo, 1600);
+        const resultado = await Tesseract.recognize(canvasFinal, 'spa+eng', {
           logger: m => {
             if (m.status === 'recognizing text') {
               estadoEl.innerText = `Leyendo etiqueta... ${Math.round(m.progress * 100)}%`;
