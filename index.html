@@ -52,6 +52,7 @@
       font-weight: 600; cursor: pointer; transition: 0.2s;
     }
     .btn-principal:hover { opacity: 0.9; }
+    .btn-principal:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .mensaje {
       font-size: 13px; padding: 10px; border-radius: 8px;
@@ -89,7 +90,7 @@
     <div id="formLogin">
       <input type="text" id="lUser" placeholder="Usuario">
       <input type="password" id="lPass" placeholder="Contraseña">
-      <button class="btn-principal" onclick="ejecutarLogin()">Ingresar</button>
+      <button class="btn-principal" id="btnLogin" onclick="ejecutarLogin()">Ingresar</button>
       <div class="switch-modo">¿No tienes cuenta? <a onclick="toggle(true)">Crear usuario</a></div>
     </div>
 
@@ -102,7 +103,7 @@
         <option value="Vendedor">Vendedor</option>
         <option value="Admin">Administrador</option>
       </select>
-      <button class="btn-principal" onclick="ejecutarRegistro()">Registrarme</button>
+      <button class="btn-principal" id="btnReg" onclick="ejecutarRegistro()">Registrarme</button>
       <div class="switch-modo">¿Ya tienes cuenta? <a onclick="toggle(false)">Iniciar sesión</a></div>
     </div>
   </div>
@@ -131,7 +132,7 @@
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: accion, ...params })
       };
-      if (metodo === 'GET') delete config.body, config.method = 'GET';
+      if (metodo === 'GET') { delete config.body; config.method = 'GET'; }
 
       const res = await fetch(url, config);
       const json = await res.json();
@@ -146,28 +147,50 @@
       document.getElementById('msg').style.display = 'none';
     }
 
+    function mostrarMensaje(texto, tipo) {
+      const m = document.getElementById('msg');
+      m.innerText = texto;
+      m.className = 'mensaje ' + tipo;
+    }
+
     async function ejecutarLogin() {
-      const usuario = document.getElementById('lUser').value;
+      const usuario = document.getElementById('lUser').value.trim();
       const password = document.getElementById('lPass').value;
+      if (!usuario || !password) {
+        mostrarMensaje('Escribe tu usuario y contraseña', 'error');
+        return;
+      }
+      const btn = document.getElementById('btnLogin');
+      btn.disabled = true; btn.innerText = 'Ingresando...';
       try {
         const user = await api('login', { usuario, password });
         entrarApp(user);
       } catch (e) {
-        const m = document.getElementById('msg'); m.innerText = e.message; m.className = 'mensaje error';
+        mostrarMensaje(e.message, 'error');
+      } finally {
+        btn.disabled = false; btn.innerText = 'Ingresar';
       }
     }
 
     async function ejecutarRegistro() {
-      const nombre = document.getElementById('rNom').value;
-      const usuario = document.getElementById('rUser').value;
+      const nombre = document.getElementById('rNom').value.trim();
+      const usuario = document.getElementById('rUser').value.trim();
       const password = document.getElementById('rPass').value;
       const rol = document.getElementById('rRol').value;
+      if (!nombre || !usuario || !password) {
+        mostrarMensaje('Completa todos los campos', 'error');
+        return;
+      }
+      const btn = document.getElementById('btnReg');
+      btn.disabled = true; btn.innerText = 'Creando...';
       try {
         await api('registrarUsuario', { nombre, usuario, password, rol });
-        const m = document.getElementById('msg'); m.innerText = "¡Creado! Ya puedes entrar."; m.className = 'mensaje ok';
+        mostrarMensaje('¡Creado! Ya puedes entrar.', 'ok');
         toggle(false);
       } catch (e) {
-        const m = document.getElementById('msg'); m.innerText = e.message; m.className = 'mensaje error';
+        mostrarMensaje(e.message, 'error');
+      } finally {
+        btn.disabled = false; btn.innerText = 'Registrarme';
       }
     }
 
@@ -188,9 +211,12 @@
     window.onload = async () => {
       try {
         const config = await api('getConfigPublica', {}, 'GET');
-        document.getElementById('txtNombreTienda').innerText = config.nombre;
-        if(config.logo) document.getElementById('logoWrap').innerHTML = `<img src="${config.logo}">`;
-      } catch(e) {}
+        // OJO: el backend devuelve "nombreEmpresa" y "logoUrl" (no "nombre" / "logo")
+        document.getElementById('txtNombreTienda').innerText = config.nombreEmpresa || 'Mi Tienda de Ropa';
+        if (config.logoUrl) document.getElementById('logoWrap').innerHTML = `<img src="${config.logoUrl}">`;
+      } catch (e) {
+        console.error('Error cargando configuración:', e);
+      }
     };
   </script>
 </body>
