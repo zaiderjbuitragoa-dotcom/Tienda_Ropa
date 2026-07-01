@@ -73,6 +73,19 @@
     .mensaje { font-size: 13px; padding: 10px; border-radius: 8px; margin-bottom: 12px; display: none; }
     .error { background: #fde5ec; color: #c0447a; display: block; }
     .ok { background: #e6f7ea; color: #2a8a4a; display: block; }
+
+    /* ESCANER DE ETIQUETA */
+    .scanner-box {
+      background: var(--fondo); border: 1.5px dashed #f0b8d0; border-radius: 12px;
+      padding: 14px; margin-bottom: 16px; text-align: center;
+    }
+    .scanner-box .scanner-titulo { font-size: 12px; font-weight: 700; color: var(--rosa-oscuro); text-transform: none; margin-bottom: 8px; display:block; }
+    .scanner-box input[type="file"] { width: auto; margin: 0 auto; font-size: 12px; }
+    .scanner-estado { font-size: 12px; color: var(--rosa-oscuro); margin-top: 8px; min-height: 16px; }
+    .scanner-preview { max-width: 110px; max-height: 110px; border-radius: 8px; margin-top: 10px; display: none; object-fit: cover; }
+    .scanner-detalle { text-align: left; margin-top: 10px; }
+    .scanner-detalle summary { cursor: pointer; font-size: 11px; color: var(--gris); }
+    .scanner-detalle pre { white-space: pre-wrap; word-break: break-word; font-size: 11px; color: #555; max-height: 120px; overflow-y: auto; background: white; border-radius: 8px; padding: 8px; margin-top: 6px; }
   </style>
 </head>
 <body>
@@ -133,6 +146,18 @@
       <h2 id="modalTitulo">Nuevo producto</h2>
       <div id="modalMsg" class="mensaje"></div>
       <input type="hidden" id="pId">
+
+      <!-- ESCANER DE ETIQUETA POR FOTO -->
+      <div class="scanner-box">
+        <label class="scanner-titulo">📷 Escanea la etiqueta de la prenda para autocompletar</label>
+        <input type="file" id="ocrInput" accept="image/*" capture="environment" onchange="procesarFotoEtiqueta(event)">
+        <div class="scanner-estado" id="ocrEstado"></div>
+        <img id="ocrPreview" class="scanner-preview" alt="Vista previa de la etiqueta">
+        <details class="scanner-detalle">
+          <summary>Ver texto detectado en la foto</summary>
+          <pre id="ocrTextoCrudo"></pre>
+        </details>
+      </div>
 
       <div class="grid2">
         <div><label>Código</label><input type="text" id="pCodigo" placeholder="Se genera solo si lo dejas vacío"></div>
@@ -214,6 +239,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Librería de OCR (lee el texto de la foto de la etiqueta), 100% en el navegador -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
   <script>
     // ⚠️ Reemplaza esta URL por la de tu propia implementación de Apps Script (termina en /exec)
@@ -329,6 +357,7 @@
     // ---------- MODAL PRODUCTO ----------
     function abrirModal(p) {
       document.getElementById('modalMsg').style.display = 'none';
+      reiniciarEscaner();
       const campos = ['pId','pCodigo','pCodigoBarras','pNombre','pCategoria','pMarca','pColor','pTalla','pGenero','pProveedor','pCosto','pPrecio','pStock','pStockMinimo','pUbicacion','pEstado','pObservaciones'];
       if (p && p.id) {
         document.getElementById('modalTitulo').innerText = 'Editar producto';
@@ -361,6 +390,111 @@
 
     function cerrarModal() {
       document.getElementById('overlayProducto').classList.remove('activo');
+    }
+
+    // ---------- ESCANER DE ETIQUETA (foto -> autocompletar) ----------
+    function reiniciarEscaner() {
+      document.getElementById('ocrInput').value = '';
+      document.getElementById('ocrEstado').innerText = '';
+      document.getElementById('ocrTextoCrudo').innerText = '';
+      const preview = document.getElementById('ocrPreview');
+      preview.src = '';
+      preview.style.display = 'none';
+    }
+
+    async function procesarFotoEtiqueta(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const estadoEl = document.getElementById('ocrEstado');
+      const preview = document.getElementById('ocrPreview');
+      preview.src = URL.createObjectURL(file);
+      preview.style.display = 'inline-block';
+      estadoEl.innerText = 'Leyendo etiqueta...';
+
+      // 1) Código de barras: usamos el lector nativo del navegador si está disponible (más preciso que el OCR)
+      try {
+        if ('BarcodeDetector' in window) {
+          const formatos = await BarcodeDetector.getSupportedFormats();
+          const detector = new BarcodeDetector({ formats: formatos });
+          const bitmap = await createImageBitmap(file);
+          const codigos = await detector.detect(bitmap);
+          if (codigos.length > 0) {
+            document.getElementById('pCodigoBarras').value = codigos[0].rawValue;
+          }
+        }
+      } catch (e) {
+        console.warn('No se pudo leer el código de barras automáticamente:', e);
+      }
+
+      // 2) Texto de la etiqueta con OCR (Tesseract.js), funciona sin conexión a ningún servidor propio
+      try {
+        if (typeof Tesseract === 'undefined') {
+          estadoEl.innerText = 'No se pudo cargar el lector de texto. Completa los datos manualmente.';
+          return;
+        }
+        const resultado = await Tesseract.recognize(file, 'spa+eng', {
+          logger: m => {
+            if (m.status === 'recognizing text') {
+              estadoEl.innerText = `Leyendo etiqueta... ${Math.round(m.progress * 100)}%`;
+            }
+          }
+        });
+        const texto = resultado.data.text || '';
+        document.getElementById('ocrTextoCrudo').innerText = texto.trim() || '(no se detectó texto legible)';
+        rellenarDesdeTextoEtiqueta(texto);
+        estadoEl.innerText = '✅ Listo. Revisa y corrige los datos si hace falta.';
+      } catch (e) {
+        console.error(e);
+        estadoEl.innerText = 'No se pudo leer el texto de la imagen. Completa los datos manualmente.';
+      }
+    }
+
+    // Analiza el texto crudo de la etiqueta y llena los campos vacíos del formulario
+    function rellenarDesdeTextoEtiqueta(textoCrudo) {
+      const lineas = textoCrudo.split('\n').map(l => l.trim()).filter(Boolean);
+      const textoUpper = textoCrudo.toUpperCase();
+      const setSiVacio = (id, valor) => {
+        const campo = document.getElementById(id);
+        if (valor && !campo.value) campo.value = valor.trim();
+      };
+
+      // Marca: normalmente aparece como una palabra corta en mayúsculas, sola en su línea
+      const posibleMarca = lineas.find(l => {
+        const limpio = l.replace(/[^A-ZÁÉÍÓÚÑ\s]/gi, '').trim();
+        return limpio.length >= 3 && limpio.length <= 20 && limpio === limpio.toUpperCase() && limpio.split(/\s+/).length <= 2;
+      });
+      if (posibleMarca) setSiVacio('pMarca', posibleMarca);
+
+      // Talla: "TALLA: M", "TALLA M", "SIZE: L"...
+      const matchTalla = textoUpper.match(/TALLA[:\s]*([A-Z0-9]{1,4})/) || textoUpper.match(/SIZE[:\s]*([A-Z0-9]{1,4})/);
+      if (matchTalla) setSiVacio('pTalla', matchTalla[1]);
+
+      // Referencia / código interno: "Ref: 202" (se recorta si sigue con "-Talla...")
+      const matchRef = textoUpper.match(/REF[.:\s]*([A-Z0-9]{1,10})/);
+      if (matchRef) setSiVacio('pCodigo', matchRef[1]);
+
+      // Categoría: palabras clave comunes en etiquetas de ropa
+      const mapaCategorias = {
+        'UNDERWEAR': 'Ropa interior', 'ROPA INTERIOR': 'Ropa interior', 'BOXER': 'Ropa interior', 'PANTY': 'Ropa interior', 'BRASIER': 'Ropa interior',
+        'CAMISETA': 'Camisetas', 'CAMISA': 'Camisas', 'BLUSA': 'Blusas', 'PANTALON': 'Pantalones', 'PANTALÓN': 'Pantalones',
+        'JEAN': 'Jeans', 'FALDA': 'Faldas', 'VESTIDO': 'Vestidos', 'CHAQUETA': 'Chaquetas', 'MEDIAS': 'Medias', 'SUDADERA': 'Sudaderas', 'SHORT': 'Shorts'
+      };
+      for (const clave in mapaCategorias) {
+        if (textoUpper.includes(clave)) { setSiVacio('pCategoria', mapaCategorias[clave]); break; }
+      }
+
+      // Nombre del producto: la línea descriptiva más probable (varias palabras, sin instrucciones de lavado/país/ref)
+      const marcaActual = (document.getElementById('pMarca').value || '').toUpperCase();
+      const candidataNombre = lineas.find(l => {
+        const up = l.toUpperCase();
+        const palabras = l.split(/\s+/).length;
+        if (palabras < 2 || palabras > 6) return false;
+        if (/REF|TALLA|SIZE|LAVAR|SECAR|PLANCHAR|PRODUCTO|COLOMBIA|MEDELL[IÍ]N|HECHO EN/.test(up)) return false;
+        if (marcaActual && up === marcaActual) return false;
+        return true;
+      });
+      if (candidataNombre) setSiVacio('pNombre', candidataNombre);
     }
 
     async function guardarProducto() {
