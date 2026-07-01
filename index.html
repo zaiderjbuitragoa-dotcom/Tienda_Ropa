@@ -130,31 +130,6 @@
     </div>
   </div>
 
-  <div id="vistaApp" class="oculto">
-    <div class="topbar">
-      <div>
-        <strong style="color:var(--rosa-oscuro)" id="appTienda"></strong> · <span id="appUser"></span>
-      </div>
-      <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
-    </div>
-
-    <div class="modulos">
-      <a class="modulo-card" href="inventario.html"><div class="modulo-icono">📦</div><div class="modulo-nombre">Inventario</div></a>
-      <a class="modulo-card" href="ventas.html"><div class="modulo-icono">🧾</div><div class="modulo-nombre">Ventas</div></a>
-      <a class="modulo-card" href="clientes.html"><div class="modulo-icono">👥</div><div class="modulo-nombre">Clientes</div></a>
-      <a class="modulo-card" href="compras.html"><div class="modulo-icono">🛒</div><div class="modulo-nombre">Compras</div></a>
-      <a class="modulo-card" href="caja.html"><div class="modulo-icono">💰</div><div class="modulo-nombre">Caja</div></a>
-      <a class="modulo-card" href="reportes.html"><div class="modulo-icono">📊</div><div class="modulo-nombre">Reportes</div></a>
-    </div>
-
-    <div class="resumen" id="resumenStats"></div>
-
-    <table>
-      <thead><tr><th>Producto</th><th>Categoría</th><th>Stock</th><th>Precio</th><th>Estado</th></tr></thead>
-      <tbody id="listaInv"><tr><td colspan="5" class="cargando">Cargando inventario...</td></tr></tbody>
-    </table>
-  </div>
-
   <script>
     // ⚠️ Reemplaza esta URL por la de tu propia implementación de Apps Script (termina en /exec)
     const API_URL = 'https://script.google.com/macros/s/AKfycbwF0T4dFM_SbfCxq6dBBSdQBL_xP2R64RZFJW-ly0AGiEWuRvVrIHXV7AQ2WrchaT_W/exec';
@@ -194,10 +169,9 @@
       try {
         const user = await api('login', { usuario, password });
         guardarSesion(user);
-        entrarApp(user);
+        window.location.href = 'dashboard.html';
       } catch (e) {
         mostrarMensaje(e.message, 'error');
-      } finally {
         btn.disabled = false; btn.innerText = 'Ingresar';
       }
     }
@@ -234,53 +208,12 @@
       location.reload();
     }
 
-    function entrarApp(u) {
-      document.getElementById('vistaAuth').classList.add('oculto');
-      document.getElementById('vistaApp').classList.remove('oculto');
-      document.getElementById('appTienda').innerText = document.getElementById('txtNombreTienda').innerText;
-      document.getElementById('appUser').innerText = `${u.nombre} (${u.rol})`;
-      cargarInv();
-    }
-
-    async function cargarInv() {
-      try {
-        const data = await api('getInventario', {}, 'GET');
-        const activos = data.filter(p => p.estado !== 'Inactivo');
-        const stockBajo = activos.filter(p => Number(p.stock) <= Number(p.stockMinimo));
-        const valorInventario = activos.reduce((s, p) => s + Number(p.stock) * Number(p.precio), 0);
-
-        document.getElementById('resumenStats').innerHTML = `
-          <div class="stat-card"><div class="valor">${activos.length}</div><div class="label">Productos activos</div></div>
-          <div class="stat-card"><div class="valor">${stockBajo.length}</div><div class="label">Con stock bajo</div></div>
-          <div class="stat-card"><div class="valor">$${valorInventario.toLocaleString('es-CO')}</div><div class="label">Valor en inventario</div></div>
-        `;
-
-        const b = document.getElementById('listaInv');
-        if (activos.length === 0) {
-          b.innerHTML = '<tr><td colspan="5" class="cargando">Aún no hay productos. Agrégalos desde el módulo Inventario.</td></tr>';
-          return;
-        }
-        b.innerHTML = activos.slice(0, 8).map(p => {
-          const bajo = Number(p.stock) <= Number(p.stockMinimo);
-          return `<tr>
-            <td>${p.nombre}</td>
-            <td>${p.categoria || '-'}</td>
-            <td><span class="badge ${bajo ? 'badge-bajo' : 'badge-ok'}">${p.stock}</span></td>
-            <td>$${Number(p.precio).toLocaleString('es-CO')}</td>
-            <td>${p.estado || 'Activo'}</td>
-          </tr>`;
-        }).join('');
-      } catch (e) {
-        document.getElementById('listaInv').innerHTML = `<tr><td colspan="5" class="cargando">Error cargando inventario: ${e.message}</td></tr>`;
-      }
-    }
-
     async function intentarSesionGuardada() {
       const token = localStorage.getItem('pos_token');
       if (!token) return;
       try {
-        const sesion = await api('validarSesion', { token }, 'GET');
-        entrarApp(sesion);
+        await api('validarSesion', { token }, 'GET');
+        window.location.href = 'dashboard.html';
       } catch (e) {
         localStorage.removeItem('pos_token');
         localStorage.removeItem('pos_usuario');
