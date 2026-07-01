@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inventario · Mi Tienda de Ropa</title>
+  <style>
+    :root {
+      --rosa: #f7a8c4; --rosa-oscuro: #e0729e; --blanco: #ffffff;
+      --gris: #8a8a8a; --fondo: #fff5f8;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: var(--fondo); color: #333; }
+    .contenedor { max-width: 1100px; width: 95%; margin: 20px auto; }
+
+    .topbar {
+      background: white; padding: 15px 20px; border-radius: 15px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 10px;
+    }
+    .marca strong { color: var(--rosa-oscuro); }
+    .btn-salir { background: none; border: 1px solid #e05555; color: #e05555; cursor: pointer; padding: 8px 14px; border-radius: 8px; font-weight: 600; }
+
+    nav.tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 4px; }
+    nav.tabs a {
+      flex: none; text-decoration: none; color: var(--rosa-oscuro); background: white;
+      padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 2px solid transparent;
+    }
+    nav.tabs a.activo { border-color: var(--rosa-oscuro); background: var(--rosa); color: white; }
+
+    .panel { background: white; border-radius: 15px; padding: 18px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    .panel-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+    .panel-header h1 { font-size: 17px; color: var(--rosa-oscuro); margin: 0; }
+    .btn-principal {
+      padding: 10px 18px; background: linear-gradient(135deg, var(--rosa), var(--rosa-oscuro));
+      color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 13px;
+    }
+    .btn-principal:hover { opacity: 0.9; }
+    .btn-secundario { padding: 9px 14px; background: white; border: 1.5px solid #f0d5e0; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 12px; color: var(--rosa-oscuro); }
+    .btn-secundario:hover { border-color: var(--rosa-oscuro); }
+
+    .filtros { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+    .filtros input, .filtros select { padding: 9px 12px; border: 1.5px solid #f0d5e0; border-radius: 8px; font-size: 13px; outline: none; }
+    .filtros input:focus, .filtros select:focus { border-color: var(--rosa-oscuro); }
+    .filtros input[type="text"] { flex: 1; min-width: 180px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 11px; text-align: left; border-bottom: 1px solid #f2e6ec; font-size: 13px; }
+    th { color: var(--rosa-oscuro); font-size: 11px; text-transform: uppercase; }
+    tr:hover td { background: #fffafc; }
+    .badge { padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-bajo { background: #fde5ec; color: #c0447a; }
+    .badge-ok { background: #e6f7ea; color: #2a8a4a; }
+    .badge-inactivo { background: #eee; color: #888; }
+    .acciones { display: flex; gap: 6px; }
+    .icon-btn { border: none; background: #fdf1f5; color: var(--rosa-oscuro); width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 14px; }
+    .icon-btn:hover { background: var(--rosa); color: white; }
+    .cargando { text-align: center; padding: 30px; color: var(--gris); font-size: 13px; }
+
+    /* MODAL */
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
+    .overlay.activo { display: flex; }
+    .modal { background: white; border-radius: 18px; padding: 24px; max-width: 560px; width: 100%; max-height: 90vh; overflow-y: auto; }
+    .modal h2 { margin: 0 0 16px; color: var(--rosa-oscuro); font-size: 17px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .modal label { display: block; font-size: 11px; color: var(--gris); margin-bottom: 4px; font-weight: 600; text-transform: uppercase; }
+    .modal input, .modal select, .modal textarea {
+      width: 100%; padding: 10px; margin-bottom: 12px; border: 1.5px solid #f0d5e0; border-radius: 8px; outline: none; font-size: 13px; font-family: inherit;
+    }
+    .modal input:focus, .modal select:focus, .modal textarea:focus { border-color: var(--rosa-oscuro); }
+    .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+    .mensaje { font-size: 13px; padding: 10px; border-radius: 8px; margin-bottom: 12px; display: none; }
+    .error { background: #fde5ec; color: #c0447a; display: block; }
+    .ok { background: #e6f7ea; color: #2a8a4a; display: block; }
+  </style>
+</head>
+<body>
+
+  <div class="contenedor">
+    <div class="topbar">
+      <div class="marca"><strong id="appTienda">Mi Tienda de Ropa</strong> · <span id="appUser"></span></div>
+      <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
+    </div>
+
+    <nav class="tabs">
+      <a href="dashboard.html">🏠 Panel</a>
+      <a href="inventario.html" class="activo">📦 Inventario</a>
+      <a href="ventas.html">🧾 Ventas</a>
+      <a href="clientes.html">👥 Clientes</a>
+      <a href="compras.html">🛒 Compras</a>
+      <a href="caja.html">💰 Caja</a>
+      <a href="reportes.html">📊 Reportes</a>
+    </nav>
+
+    <div class="panel">
+      <div class="panel-header">
+        <h1>Inventario</h1>
+        <button class="btn-principal" onclick="abrirModal()">+ Nuevo producto</button>
+      </div>
+
+      <div class="filtros">
+        <input type="text" id="fBuscar" placeholder="Buscar por nombre o código..." oninput="renderTabla()">
+        <select id="fCategoria" onchange="renderTabla()"><option value="">Todas las categorías</option></select>
+        <select id="fEstado" onchange="renderTabla()">
+          <option value="">Todos los estados</option>
+          <option value="Activo">Activo</option>
+          <option value="Inactivo">Inactivo</option>
+        </select>
+        <label style="display:flex; align-items:center; gap:6px; font-size:13px; color:var(--gris);">
+          <input type="checkbox" id="fStockBajo" onchange="renderTabla()" style="width:auto; margin:0;"> Solo stock bajo
+        </label>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th><th>Producto</th><th>Categoría</th><th>Talla / Color</th>
+              <th>Stock</th><th>Precio</th><th>Estado</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="listaInv"><tr><td colspan="8" class="cargando">Cargando inventario...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL PRODUCTO -->
+  <div class="overlay" id="overlayProducto">
+    <div class="modal">
+      <h2 id="modalTitulo">Nuevo producto</h2>
+      <div id="modalMsg" class="mensaje"></div>
+      <input type="hidden" id="pId">
+
+      <div class="grid2">
+        <div><label>Código</label><input type="text" id="pCodigo" placeholder="Se genera solo si lo dejas vacío"></div>
+        <div><label>Código de barras</label><input type="text" id="pCodigoBarras"></div>
+      </div>
+
+      <label>Nombre del producto *</label>
+      <input type="text" id="pNombre" placeholder="Ej. Blusa manga larga">
+
+      <div class="grid2">
+        <div><label>Categoría</label><input type="text" id="pCategoria" placeholder="Ej. Blusas"></div>
+        <div><label>Marca</label><input type="text" id="pMarca"></div>
+      </div>
+
+      <div class="grid2">
+        <div><label>Color</label><input type="text" id="pColor"></div>
+        <div><label>Talla</label><input type="text" id="pTalla" placeholder="S, M, L, 32, 34..."></div>
+      </div>
+
+      <div class="grid2">
+        <div><label>Género</label>
+          <select id="pGenero">
+            <option value="Mujer">Mujer</option>
+            <option value="Hombre">Hombre</option>
+            <option value="Unisex">Unisex</option>
+            <option value="Niño">Niño</option>
+            <option value="Niña">Niña</option>
+          </select>
+        </div>
+        <div><label>Proveedor</label><input type="text" id="pProveedor"></div>
+      </div>
+
+      <div class="grid2">
+        <div><label>Costo</label><input type="number" id="pCosto" min="0" step="0.01"></div>
+        <div><label>Precio de venta *</label><input type="number" id="pPrecio" min="0" step="0.01"></div>
+      </div>
+
+      <div class="grid2">
+        <div><label>Stock inicial</label><input type="number" id="pStock" min="0"></div>
+        <div><label>Stock mínimo</label><input type="number" id="pStockMinimo" min="0" value="5"></div>
+      </div>
+
+      <div class="grid2">
+        <div><label>Ubicación</label><input type="text" id="pUbicacion" placeholder="Ej. Bodega A"></div>
+        <div><label>Estado</label>
+          <select id="pEstado"><option value="Activo">Activo</option><option value="Inactivo">Inactivo</option></select>
+        </div>
+      </div>
+
+      <label>Observaciones</label>
+      <textarea id="pObservaciones" rows="2"></textarea>
+
+      <div class="modal-footer">
+        <button class="btn-secundario" onclick="cerrarModal()">Cancelar</button>
+        <button class="btn-principal" id="btnGuardarProducto" onclick="guardarProducto()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL AJUSTE DE STOCK -->
+  <div class="overlay" id="overlayStock">
+    <div class="modal" style="max-width:380px;">
+      <h2>Ajustar stock</h2>
+      <div id="stockMsg" class="mensaje"></div>
+      <p style="font-size:13px; color:var(--gris); margin-top:-8px;" id="stockProductoNombre"></p>
+      <input type="hidden" id="stockCodigo">
+      <label>Tipo de movimiento</label>
+      <select id="stockTipo">
+        <option value="Entrada">Entrada (sumar)</option>
+        <option value="Salida">Salida (restar)</option>
+      </select>
+      <label>Cantidad</label>
+      <input type="number" id="stockCantidad" min="1" value="1">
+      <label>Nota / documento (opcional)</label>
+      <input type="text" id="stockDocumento" placeholder="Ej. Ajuste manual">
+      <div class="modal-footer">
+        <button class="btn-secundario" onclick="cerrarModalStock()">Cancelar</button>
+        <button class="btn-principal" id="btnGuardarStock" onclick="confirmarAjusteStock()">Aplicar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ⚠️ Reemplaza esta URL por la de tu propia implementación de Apps Script (termina en /exec)
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwF0T4dFM_SbfCxq6dBBSdQBL_xP2R64RZFJW-ly0AGiEWuRvVrIHXV7AQ2WrchaT_W/exec';
+    let TOKEN = null;
+    let PRODUCTOS = [];
+
+    async function api(accion, params = {}, metodo = 'POST') {
+      const url = metodo === 'GET' ? `${API_URL}?action=${accion}&${new URLSearchParams(params)}` : API_URL;
+      const config = {
+        method: metodo,
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: metodo === 'GET' ? undefined : JSON.stringify({ action: accion, ...params })
+      };
+      const res = await fetch(url, config);
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error);
+      return json.data;
+    }
+
+    function cerrarSesion() {
+      if (TOKEN) api('logoutSesion', { token: TOKEN }).catch(() => {});
+      localStorage.removeItem('pos_token');
+      localStorage.removeItem('pos_usuario');
+      window.location.href = 'index.html';
+    }
+
+    async function requerirSesion() {
+      TOKEN = localStorage.getItem('pos_token');
+      if (!TOKEN) { window.location.href = 'index.html'; return null; }
+      try {
+        const sesion = await api('validarSesion', { token: TOKEN }, 'GET');
+        document.getElementById('appUser').innerText = `${sesion.nombre} (${sesion.rol})`;
+        return sesion;
+      } catch (e) {
+        localStorage.removeItem('pos_token');
+        window.location.href = 'index.html';
+        return null;
+      }
+    }
+
+    async function cargarConfig() {
+      try {
+        const config = await api('getConfigPublica', {}, 'GET');
+        document.getElementById('appTienda').innerText = config.nombreEmpresa || 'Mi Tienda de Ropa';
+      } catch (e) { console.error(e); }
+    }
+
+    // ---------- LISTADO / FILTROS ----------
+    async function cargarInventario() {
+      const b = document.getElementById('listaInv');
+      b.innerHTML = '<tr><td colspan="8" class="cargando">Cargando inventario...</td></tr>';
+      try {
+        PRODUCTOS = await api('getInventario', {}, 'GET');
+        poblarCategorias();
+        renderTabla();
+      } catch (e) {
+        b.innerHTML = `<tr><td colspan="8" class="cargando">Error: ${e.message}</td></tr>`;
+      }
+    }
+
+    function poblarCategorias() {
+      const select = document.getElementById('fCategoria');
+      const actual = select.value;
+      const categorias = [...new Set(PRODUCTOS.map(p => p.categoria).filter(Boolean))].sort();
+      select.innerHTML = '<option value="">Todas las categorías</option>' + categorias.map(c => `<option value="${c}">${c}</option>`).join('');
+      select.value = actual;
+    }
+
+    function renderTabla() {
+      const buscar = document.getElementById('fBuscar').value.trim().toLowerCase();
+      const categoria = document.getElementById('fCategoria').value;
+      const estado = document.getElementById('fEstado').value;
+      const soloBajo = document.getElementById('fStockBajo').checked;
+
+      let lista = PRODUCTOS.filter(p => {
+        if (buscar && !(`${p.nombre} ${p.codigo}`.toLowerCase().includes(buscar))) return false;
+        if (categoria && p.categoria !== categoria) return false;
+        if (estado && (p.estado || 'Activo') !== estado) return false;
+        if (soloBajo && !(Number(p.stock) <= Number(p.stockMinimo))) return false;
+        return true;
+      });
+
+      const b = document.getElementById('listaInv');
+      if (lista.length === 0) {
+        b.innerHTML = '<tr><td colspan="8" class="cargando">No se encontraron productos con esos filtros.</td></tr>';
+        return;
+      }
+
+      b.innerHTML = lista.map(p => {
+        const bajo = Number(p.stock) <= Number(p.stockMinimo);
+        const inactivo = p.estado === 'Inactivo';
+        const badgeClass = inactivo ? 'badge-inactivo' : (bajo ? 'badge-bajo' : 'badge-ok');
+        return `<tr>
+          <td>${p.codigo || '-'}</td>
+          <td>${p.nombre}</td>
+          <td>${p.categoria || '-'}</td>
+          <td>${[p.talla, p.color].filter(Boolean).join(' / ') || '-'}</td>
+          <td><span class="badge ${badgeClass}">${p.stock}</span></td>
+          <td>$${Number(p.precio || 0).toLocaleString('es-CO')}</td>
+          <td>${inactivo ? 'Inactivo' : 'Activo'}</td>
+          <td>
+            <div class="acciones">
+              <button class="icon-btn" title="Ajustar stock" onclick="abrirModalStock('${p.codigo}','${(p.nombre || '').replace(/'/g, "\\'")}')">↕️</button>
+              <button class="icon-btn" title="Editar" onclick='abrirModal(${JSON.stringify(p)})'>✏️</button>
+              <button class="icon-btn" title="Desactivar" onclick="desactivarProducto(${p.id}, '${(p.nombre || '').replace(/'/g, "\\'")}')">🗑️</button>
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    // ---------- MODAL PRODUCTO ----------
+    function abrirModal(p) {
+      document.getElementById('modalMsg').style.display = 'none';
+      const campos = ['pId','pCodigo','pCodigoBarras','pNombre','pCategoria','pMarca','pColor','pTalla','pGenero','pProveedor','pCosto','pPrecio','pStock','pStockMinimo','pUbicacion','pEstado','pObservaciones'];
+      if (p && p.id) {
+        document.getElementById('modalTitulo').innerText = 'Editar producto';
+        document.getElementById('pId').value = p.id;
+        document.getElementById('pCodigo').value = p.codigo || '';
+        document.getElementById('pCodigoBarras').value = p.codigoBarras || '';
+        document.getElementById('pNombre').value = p.nombre || '';
+        document.getElementById('pCategoria').value = p.categoria || '';
+        document.getElementById('pMarca').value = p.marca || '';
+        document.getElementById('pColor').value = p.color || '';
+        document.getElementById('pTalla').value = p.talla || '';
+        document.getElementById('pGenero').value = p.genero || 'Mujer';
+        document.getElementById('pProveedor').value = p.proveedor || '';
+        document.getElementById('pCosto').value = p.costo || 0;
+        document.getElementById('pPrecio').value = p.precio || 0;
+        document.getElementById('pStock').value = p.stock || 0;
+        document.getElementById('pStockMinimo').value = p.stockMinimo || 5;
+        document.getElementById('pUbicacion').value = p.ubicacion || '';
+        document.getElementById('pEstado').value = p.estado || 'Activo';
+        document.getElementById('pObservaciones').value = p.observaciones || '';
+      } else {
+        document.getElementById('modalTitulo').innerText = 'Nuevo producto';
+        campos.forEach(id => document.getElementById(id).value = '');
+        document.getElementById('pStockMinimo').value = 5;
+        document.getElementById('pGenero').value = 'Mujer';
+        document.getElementById('pEstado').value = 'Activo';
+      }
+      document.getElementById('overlayProducto').classList.add('activo');
+    }
+
+    function cerrarModal() {
+      document.getElementById('overlayProducto').classList.remove('activo');
+    }
+
+    async function guardarProducto() {
+      const nombre = document.getElementById('pNombre').value.trim();
+      const precio = document.getElementById('pPrecio').value;
+      if (!nombre) { mostrarModalMsg('El nombre es obligatorio', 'error'); return; }
+      if (precio === '' || Number(precio) < 0) { mostrarModalMsg('Ingresa un precio de venta válido', 'error'); return; }
+
+      const producto = {
+        id: document.getElementById('pId').value || undefined,
+        codigo: document.getElementById('pCodigo').value.trim(),
+        codigoBarras: document.getElementById('pCodigoBarras').value.trim(),
+        nombre, categoria: document.getElementById('pCategoria').value.trim(),
+        marca: document.getElementById('pMarca').value.trim(),
+        color: document.getElementById('pColor').value.trim(),
+        talla: document.getElementById('pTalla').value.trim(),
+        genero: document.getElementById('pGenero').value,
+        proveedor: document.getElementById('pProveedor').value.trim(),
+        costo: document.getElementById('pCosto').value || 0,
+        precio: precio,
+        stock: document.getElementById('pStock').value || 0,
+        stockMinimo: document.getElementById('pStockMinimo').value || 0,
+        ubicacion: document.getElementById('pUbicacion').value.trim(),
+        estado: document.getElementById('pEstado').value,
+        observaciones: document.getElementById('pObservaciones').value.trim()
+      };
+
+      const btn = document.getElementById('btnGuardarProducto');
+      btn.disabled = true; btn.innerText = 'Guardando...';
+      try {
+        await api('guardarProducto', { token: TOKEN, producto });
+        cerrarModal();
+        await cargarInventario();
+      } catch (e) {
+        mostrarModalMsg(e.message, 'error');
+      } finally {
+        btn.disabled = false; btn.innerText = 'Guardar';
+      }
+    }
+
+    function mostrarModalMsg(texto, tipo) {
+      const m = document.getElementById('modalMsg');
+      m.innerText = texto; m.className = 'mensaje ' + tipo;
+    }
+
+    async function desactivarProducto(id, nombre) {
+      if (!confirm(`¿Desactivar "${nombre}"? Podrás reactivarlo luego editándolo.`)) return;
+      try {
+        await api('eliminarProducto', { token: TOKEN, id });
+        await cargarInventario();
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    // ---------- MODAL STOCK ----------
+    function abrirModalStock(codigo, nombre) {
+      document.getElementById('stockMsg').style.display = 'none';
+      document.getElementById('stockCodigo').value = codigo;
+      document.getElementById('stockProductoNombre').innerText = nombre;
+      document.getElementById('stockCantidad').value = 1;
+      document.getElementById('stockDocumento').value = '';
+      document.getElementById('overlayStock').classList.add('activo');
+    }
+
+    function cerrarModalStock() {
+      document.getElementById('overlayStock').classList.remove('activo');
+    }
+
+    async function confirmarAjusteStock() {
+      const codigo = document.getElementById('stockCodigo').value;
+      const tipo = document.getElementById('stockTipo').value;
+      const cantidad = Number(document.getElementById('stockCantidad').value);
+      const documento = document.getElementById('stockDocumento').value.trim();
+      if (!cantidad || cantidad <= 0) {
+        document.getElementById('stockMsg').innerText = 'Ingresa una cantidad válida';
+        document.getElementById('stockMsg').className = 'mensaje error';
+        return;
+      }
+      const btn = document.getElementById('btnGuardarStock');
+      btn.disabled = true; btn.innerText = 'Aplicando...';
+      try {
+        await api('ajustarStock', { token: TOKEN, codigo, cantidad, tipo, documento });
+        cerrarModalStock();
+        await cargarInventario();
+      } catch (e) {
+        document.getElementById('stockMsg').innerText = e.message;
+        document.getElementById('stockMsg').className = 'mensaje error';
+      } finally {
+        btn.disabled = false; btn.innerText = 'Aplicar';
+      }
+    }
+
+    window.onload = async () => {
+      const sesion = await requerirSesion();
+      if (!sesion) return;
+      await cargarConfig();
+      await cargarInventario();
+    };
+  </script>
+</body>
+</html>
