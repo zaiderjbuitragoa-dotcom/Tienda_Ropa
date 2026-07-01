@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ventas · Mi Tienda de Ropa</title>
+  <style>
+    :root {
+      --rosa: #f7a8c4; --rosa-oscuro: #e0729e; --blanco: #ffffff;
+      --gris: #8a8a8a; --fondo: #fff5f8;
+    }
+    * { box-sizing: border-box; }
+    .oculto { display: none !important; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: var(--fondo); color: #333; }
+    .contenedor { max-width: 1100px; width: 95%; margin: 20px auto; }
+
+    .topbar {
+      background: white; padding: 15px 20px; border-radius: 15px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 10px;
+    }
+    .marca strong { color: var(--rosa-oscuro); }
+    .btn-salir { background: none; border: 1px solid #e05555; color: #e05555; cursor: pointer; padding: 8px 14px; border-radius: 8px; font-weight: 600; }
+
+    nav.tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 4px; }
+    nav.tabs a {
+      flex: none; text-decoration: none; color: var(--rosa-oscuro); background: white;
+      padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 2px solid transparent;
+    }
+    nav.tabs a.activo { border-color: var(--rosa-oscuro); background: var(--rosa); color: white; }
+
+    .layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; align-items: start; }
+    @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+
+    .panel { background: white; border-radius: 15px; padding: 18px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    .panel h2 { font-size: 15px; color: var(--rosa-oscuro); margin: 0 0 14px; }
+
+    input, select, textarea {
+      width: 100%; padding: 10px; border: 1.5px solid #f0d5e0; border-radius: 8px; outline: none; font-size: 13px; font-family: inherit; box-sizing: border-box;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--rosa-oscuro); }
+    label { display: block; font-size: 11px; color: var(--gris); margin: 10px 0 4px; font-weight: 600; text-transform: uppercase; }
+
+    .resultado-buscar { max-height: 220px; overflow-y: auto; border: 1px solid #f2e6ec; border-radius: 8px; margin-top: 6px; }
+    .resultado-item { padding: 9px 12px; font-size: 13px; cursor: pointer; display: flex; justify-content: space-between; border-bottom: 1px solid #f7ebf1; }
+    .resultado-item:hover { background: #fdf1f5; }
+    .resultado-item:last-child { border-bottom: none; }
+    .resultado-item .stock-tag { color: var(--gris); font-size: 11px; }
+
+    table.carrito { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    table.carrito th, table.carrito td { padding: 8px 6px; font-size: 12.5px; border-bottom: 1px solid #f2e6ec; text-align: left; }
+    table.carrito th { color: var(--rosa-oscuro); font-size: 10.5px; text-transform: uppercase; }
+    table.carrito input[type="number"] { width: 60px; padding: 5px; }
+    .btn-quitar { border: none; background: none; color: #c0447a; cursor: pointer; font-size: 15px; }
+    .vacio-carrito { text-align: center; padding: 20px; color: var(--gris); font-size: 13px; }
+
+    .totales-fila { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; }
+    .totales-fila.total { font-size: 16px; font-weight: 700; color: var(--rosa-oscuro); border-top: 1.5px solid #f2e6ec; margin-top: 8px; padding-top: 10px; }
+
+    .btn-principal { padding: 12px; background: linear-gradient(135deg, var(--rosa), var(--rosa-oscuro)); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px; width: 100%; margin-top: 14px; }
+    .btn-principal:hover { opacity: 0.9; }
+    .btn-principal:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-secundario { padding: 9px 14px; background: white; border: 1.5px solid #f0d5e0; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 12px; color: var(--rosa-oscuro); }
+
+    .mensaje { font-size: 13px; padding: 10px; border-radius: 8px; margin-bottom: 12px; display: none; }
+    .error { background: #fde5ec; color: #c0447a; display: block; }
+    .ok { background: #e6f7ea; color: #2a8a4a; display: block; }
+
+    table.historial { width: 100%; border-collapse: collapse; }
+    table.historial th, table.historial td { padding: 10px; font-size: 12.5px; border-bottom: 1px solid #f2e6ec; text-align: left; }
+    table.historial th { color: var(--rosa-oscuro); font-size: 10.5px; text-transform: uppercase; }
+    .badge { padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-pagada { background: #e6f7ea; color: #2a8a4a; }
+    .badge-anulada { background: #eee; color: #888; }
+    .cargando { text-align: center; padding: 20px; color: var(--gris); font-size: 13px; }
+
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
+    .overlay.activo { display: flex; }
+    .modal { background: white; border-radius: 18px; padding: 24px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; }
+    .modal h2 { margin: 0 0 16px; color: var(--rosa-oscuro); font-size: 17px; }
+  </style>
+</head>
+<body>
+
+  <div class="contenedor">
+    <div class="topbar">
+      <div class="marca"><strong id="appTienda">Mi Tienda de Ropa</strong> · <span id="appUser"></span></div>
+      <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
+    </div>
+
+    <nav class="tabs">
+      <a href="dashboard.html">🏠 Panel</a>
+      <a href="inventario.html">📦 Inventario</a>
+      <a href="ventas.html" class="activo">🧾 Ventas</a>
+      <a href="clientes.html">👥 Clientes</a>
+      <a href="compras.html">🛒 Compras</a>
+      <a href="caja.html">💰 Caja</a>
+      <a href="reportes.html">📊 Reportes</a>
+    </nav>
+
+    <div class="layout">
+      <!-- COLUMNA IZQUIERDA: BUSCAR + CARRITO -->
+      <div>
+        <div class="panel">
+          <h2>Agregar productos</h2>
+          <input type="text" id="buscarProducto" placeholder="Buscar por nombre o código..." oninput="buscarProductos()">
+          <div class="resultado-buscar oculto" id="resultadosProductos"></div>
+
+          <table class="carrito">
+            <thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Total</th><th></th></tr></thead>
+            <tbody id="carritoBody"><tr><td colspan="5" class="vacio-carrito">El carrito está vacío. Busca un producto arriba.</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h2>Historial de ventas</h2>
+          <div style="overflow-x:auto;">
+            <table class="historial">
+              <thead><tr><th>N°</th><th>Fecha</th><th>Cliente</th><th>Total</th><th>Estado</th><th></th></tr></thead>
+              <tbody id="historialBody"><tr><td colspan="6" class="cargando">Cargando ventas...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMNA DERECHA: CLIENTE + PAGO + TOTALES -->
+      <div class="panel">
+        <h2>Datos de la venta</h2>
+        <div id="ventaMsg" class="mensaje"></div>
+
+        <label>Cliente</label>
+        <input type="text" id="buscarCliente" placeholder="Buscar cliente o dejar vacío = Consumidor final" oninput="buscarClientes()">
+        <div class="resultado-buscar oculto" id="resultadosClientes"></div>
+        <div id="clienteSeleccionado" style="font-size:12.5px; color:var(--gris); margin-top:6px;">Cliente: <strong>Consumidor final</strong></div>
+
+        <label>Forma de pago</label>
+        <select id="formaPago">
+          <option value="Efectivo">Efectivo</option>
+          <option value="Tarjeta">Tarjeta</option>
+          <option value="Transferencia">Transferencia</option>
+          <option value="Otro">Otro</option>
+        </select>
+
+        <label>Descuento (valor)</label>
+        <input type="number" id="descuentoGlobal" min="0" value="0" oninput="actualizarTotales()">
+
+        <label>Observaciones</label>
+        <textarea id="observacionesVenta" rows="2"></textarea>
+
+        <div style="margin-top:14px;">
+          <div class="totales-fila"><span>Subtotal</span><span id="totSubtotal">$0</span></div>
+          <div class="totales-fila"><span>Descuento</span><span id="totDescuento">-$0</span></div>
+          <div class="totales-fila"><span id="labelIva">IVA</span><span id="totIva">$0</span></div>
+          <div class="totales-fila total"><span>Total</span><span id="totTotal">$0</span></div>
+        </div>
+
+        <button class="btn-principal" id="btnCobrar" onclick="registrarVenta()">Registrar venta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DETALLE FACTURA -->
+  <div class="overlay" id="overlayDetalle">
+    <div class="modal">
+      <h2 id="detalleTitulo">Factura</h2>
+      <div id="detalleContenido"></div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+        <button class="btn-secundario" onclick="cerrarDetalle()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwF0T4dFM_SbfCxq6dBBSdQBL_xP2R64RZFJW-ly0AGiEWuRvVrIHXV7AQ2WrchaT_W/exec';
+    let TOKEN = null;
+    let PRODUCTOS = [];
+    let CLIENTES = [];
+    let CARRITO = [];
+    let CLIENTE_SELECCIONADO = null;
+    let CONFIG = { iva: 0.19, moneda: '$' };
+
+    async function api(accion, params = {}, metodo = 'POST') {
+      const url = metodo === 'GET' ? `${API_URL}?action=${accion}&${new URLSearchParams(params)}` : API_URL;
+      const config = {
+        method: metodo,
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: metodo === 'GET' ? undefined : JSON.stringify({ action: accion, ...params })
+      };
+      const res = await fetch(url, config);
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error);
+      return json.data;
+    }
+
+    function cerrarSesion() {
+      if (TOKEN) api('logoutSesion', { token: TOKEN }).catch(() => {});
+      localStorage.removeItem('pos_token');
+      window.location.href = 'index.html';
+    }
+
+    async function requerirSesion() {
+      TOKEN = localStorage.getItem('pos_token');
+      if (!TOKEN) { window.location.href = 'index.html'; return null; }
+      try {
+        const sesion = await api('validarSesion', { token: TOKEN }, 'GET');
+        document.getElementById('appUser').innerText = `${sesion.nombre} (${sesion.rol})`;
+        return sesion;
+      } catch (e) {
+        localStorage.removeItem('pos_token');
+        window.location.href = 'index.html';
+        return null;
+      }
+    }
+
+    async function cargarConfig() {
+      try {
+        CONFIG = await api('getConfigPublica', {}, 'GET');
+        document.getElementById('appTienda').innerText = CONFIG.nombreEmpresa || 'Mi Tienda de Ropa';
+        document.getElementById('labelIva').innerText = `IVA (${Math.round((CONFIG.iva || 0) * 100)}%)`;
+      } catch (e) { console.error(e); }
+    }
+
+    async function cargarDatosBase() {
+      try {
+        [PRODUCTOS, CLIENTES] = await Promise.all([api('getInventario', {}, 'GET'), api('getClientes', {}, 'GET')]);
+      } catch (e) { console.error(e); }
+    }
+
+    // ---------- BUSCAR PRODUCTOS ----------
+    function buscarProductos() {
+      const q = document.getElementById('buscarProducto').value.trim().toLowerCase();
+      const cont = document.getElementById('resultadosProductos');
+      if (!q) { cont.classList.add('oculto'); cont.innerHTML = ''; return; }
+
+      const resultados = PRODUCTOS.filter(p => p.estado !== 'Inactivo' && Number(p.stock) > 0 &&
+        (`${p.nombre} ${p.codigo}`.toLowerCase().includes(q))).slice(0, 8);
+
+      if (resultados.length === 0) {
+        cont.innerHTML = '<div class="resultado-item">Sin resultados con stock disponible</div>';
+      } else {
+        cont.innerHTML = resultados.map(p => `
+          <div class="resultado-item" onclick='agregarAlCarrito(${JSON.stringify(p)})'>
+            <span>${p.nombre} ${p.talla ? '· ' + p.talla : ''} ${p.color ? '· ' + p.color : ''}</span>
+            <span class="stock-tag">$${Number(p.precio).toLocaleString('es-CO')} · stock ${p.stock}</span>
+          </div>`).join('');
+      }
+      cont.classList.remove('oculto');
+    }
+
+    function agregarAlCarrito(p) {
+      document.getElementById('buscarProducto').value = '';
+      document.getElementById('resultadosProductos').classList.add('oculto');
+
+      const existente = CARRITO.find(it => it.codigo === p.codigo);
+      if (existente) {
+        if (existente.cantidad + 1 > Number(p.stock)) { alert('No hay suficiente stock'); return; }
+        existente.cantidad++;
+      } else {
+        CARRITO.push({ codigo: p.codigo, producto: p.nombre, talla: p.talla, color: p.color, cantidad: 1, costo: Number(p.costo) || 0, precio: Number(p.precio), descuento: 0, stockDisponible: Number(p.stock) });
+      }
+      renderCarrito();
+    }
+
+    function renderCarrito() {
+      const b = document.getElementById('carritoBody');
+      if (CARRITO.length === 0) {
+        b.innerHTML = '<tr><td colspan="5" class="vacio-carrito">El carrito está vacío. Busca un producto arriba.</td></tr>';
+        actualizarTotales();
+        return;
+      }
+      b.innerHTML = CARRITO.map((it, i) => `
+        <tr>
+          <td>${it.producto}${it.talla ? ' · ' + it.talla : ''}${it.color ? ' · ' + it.color : ''}</td>
+          <td><input type="number" min="1" max="${it.stockDisponible}" value="${it.cantidad}" onchange="cambiarCantidad(${i}, this.value)"></td>
+          <td>$${it.precio.toLocaleString('es-CO')}</td>
+          <td>$${(it.precio * it.cantidad - it.descuento).toLocaleString('es-CO')}</td>
+          <td><button class="btn-quitar" onclick="quitarDelCarrito(${i})">✕</button></td>
+        </tr>`).join('');
+      actualizarTotales();
+    }
+
+    function cambiarCantidad(i, valor) {
+      const cant = Number(valor);
+      if (cant <= 0) { quitarDelCarrito(i); return; }
+      if (cant > CARRITO[i].stockDisponible) { alert('No hay suficiente stock, máximo ' + CARRITO[i].stockDisponible); renderCarrito(); return; }
+      CARRITO[i].cantidad = cant;
+      renderCarrito();
+    }
+
+    function quitarDelCarrito(i) {
+      CARRITO.splice(i, 1);
+      renderCarrito();
+    }
+
+    // ---------- BUSCAR CLIENTES ----------
+    function buscarClientes() {
+      const q = document.getElementById('buscarCliente').value.trim().toLowerCase();
+      const cont = document.getElementById('resultadosClientes');
+      if (!q) { cont.classList.add('oculto'); cont.innerHTML = ''; return; }
+
+      const resultados = CLIENTES.filter(c => c.estado !== 'Inactivo' &&
+        (`${c.nombre} ${c.apellido} ${c.documento}`.toLowerCase().includes(q))).slice(0, 8);
+
+      cont.innerHTML = resultados.length === 0
+        ? '<div class="resultado-item">Sin resultados. Puedes registrarlo en el módulo Clientes.</div>'
+        : resultados.map(c => `<div class="resultado-item" onclick='seleccionarCliente(${JSON.stringify(c)})'>
+            <span>${c.nombre} ${c.apellido || ''}</span><span class="stock-tag">${c.documento || ''}</span></div>`).join('');
+      cont.classList.remove('oculto');
+    }
+
+    function seleccionarCliente(c) {
+      CLIENTE_SELECCIONADO = c;
+      document.getElementById('buscarCliente').value = '';
+      document.getElementById('resultadosClientes').classList.add('oculto');
+      document.getElementById('clienteSeleccionado').innerHTML = `Cliente: <strong>${c.nombre} ${c.apellido || ''}</strong> <a href="#" onclick="quitarCliente(event)" style="color:var(--rosa-oscuro);">(quitar)</a>`;
+    }
+
+    function quitarCliente(e) {
+      e.preventDefault();
+      CLIENTE_SELECCIONADO = null;
+      document.getElementById('clienteSeleccionado').innerHTML = 'Cliente: <strong>Consumidor final</strong>';
+    }
+
+    // ---------- TOTALES ----------
+    function calcularTotales() {
+      const subtotal = CARRITO.reduce((s, it) => s + it.precio * it.cantidad - it.descuento, 0);
+      const descuento = Number(document.getElementById('descuentoGlobal').value) || 0;
+      const base = Math.max(subtotal - descuento, 0);
+      const iva = Math.round(base * (CONFIG.iva || 0) * 100) / 100;
+      const total = Math.round((base + iva) * 100) / 100;
+      return { subtotal, descuento, iva, total };
+    }
+
+    function actualizarTotales() {
+      const { subtotal, descuento, iva, total } = calcularTotales();
+      const m = CONFIG.moneda || '$';
+      document.getElementById('totSubtotal').innerText = m + subtotal.toLocaleString('es-CO');
+      document.getElementById('totDescuento').innerText = '-' + m + descuento.toLocaleString('es-CO');
+      document.getElementById('totIva').innerText = m + iva.toLocaleString('es-CO');
+      document.getElementById('totTotal').innerText = m + total.toLocaleString('es-CO');
+    }
+
+    // ---------- REGISTRAR VENTA ----------
+    async function registrarVenta() {
+      const msg = document.getElementById('ventaMsg');
+      msg.style.display = 'none';
+      if (CARRITO.length === 0) { msg.innerText = 'Agrega al menos un producto al carrito'; msg.className = 'mensaje error'; return; }
+
+      const venta = {
+        cliente: CLIENTE_SELECCIONADO ? { id: CLIENTE_SELECCIONADO.id, nombre: `${CLIENTE_SELECCIONADO.nombre} ${CLIENTE_SELECCIONADO.apellido || ''}`.trim(), documento: CLIENTE_SELECCIONADO.documento, telefono: CLIENTE_SELECCIONADO.telefono } : {},
+        formaPago: document.getElementById('formaPago').value,
+        descuento: Number(document.getElementById('descuentoGlobal').value) || 0,
+        observaciones: document.getElementById('observacionesVenta').value.trim(),
+        items: CARRITO.map(it => ({ codigo: it.codigo, producto: it.producto, talla: it.talla, color: it.color, cantidad: it.cantidad, costo: it.costo, precio: it.precio, descuento: it.descuento }))
+      };
+
+      const btn = document.getElementById('btnCobrar');
+      btn.disabled = true; btn.innerText = 'Registrando...';
+      try {
+        const res = await api('crearVenta', { token: TOKEN, venta });
+        msg.innerText = `Venta ${res.numeroFactura} registrada por $${Number(res.total).toLocaleString('es-CO')}`;
+        msg.className = 'mensaje ok';
+        CARRITO = [];
+        CLIENTE_SELECCIONADO = null;
+        document.getElementById('clienteSeleccionado').innerHTML = 'Cliente: <strong>Consumidor final</strong>';
+        document.getElementById('descuentoGlobal').value = 0;
+        document.getElementById('observacionesVenta').value = '';
+        renderCarrito();
+        await Promise.all([cargarDatosBase(), cargarHistorial()]);
+      } catch (e) {
+        msg.innerText = e.message;
+        msg.className = 'mensaje error';
+      } finally {
+        btn.disabled = false; btn.innerText = 'Registrar venta';
+      }
+    }
+
+    // ---------- HISTORIAL ----------
+    async function cargarHistorial() {
+      const b = document.getElementById('historialBody');
+      try {
+        const facturas = await api('getFacturas', {}, 'GET');
+        const recientes = facturas.slice(-15).reverse();
+        if (recientes.length === 0) { b.innerHTML = '<tr><td colspan="6" class="cargando">Aún no hay ventas registradas.</td></tr>'; return; }
+        b.innerHTML = recientes.map(f => `
+          <tr>
+            <td>${f.numero}</td>
+            <td>${f.fecha}</td>
+            <td>${f.cliente}</td>
+            <td>$${Number(f.total).toLocaleString('es-CO')}</td>
+            <td><span class="badge ${f.estado === 'Anulada' ? 'badge-anulada' : 'badge-pagada'}">${f.estado}</span></td>
+            <td>
+              <button class="btn-secundario" onclick="verDetalle(${f.id}, '${f.numero}')">Ver</button>
+              ${f.estado !== 'Anulada' ? `<button class="btn-secundario" onclick="anularVenta(${f.id}, '${f.numero}')">Anular</button>` : ''}
+            </td>
+          </tr>`).join('');
+      } catch (e) {
+        b.innerHTML = `<tr><td colspan="6" class="cargando">Error: ${e.message}</td></tr>`;
+      }
+    }
+
+    async function verDetalle(idFactura, numero) {
+      document.getElementById('detalleTitulo').innerText = 'Factura ' + numero;
+      document.getElementById('detalleContenido').innerHTML = '<p class="cargando">Cargando...</p>';
+      document.getElementById('overlayDetalle').classList.add('activo');
+      try {
+        const detalle = await api('getDetalleFactura', { idFactura }, 'GET');
+        document.getElementById('detalleContenido').innerHTML = detalle.length === 0 ? '<p>Sin ítems.</p>' : `
+          <table class="historial">
+            <thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Total</th></tr></thead>
+            <tbody>${detalle.map(d => `<tr><td>${d.producto} ${d.talla ? '· ' + d.talla : ''}</td><td>${d.cantidad}</td><td>$${Number(d.precio).toLocaleString('es-CO')}</td><td>$${Number(d.total).toLocaleString('es-CO')}</td></tr>`).join('')}</tbody>
+          </table>`;
+      } catch (e) {
+        document.getElementById('detalleContenido').innerHTML = `<p class="mensaje error">${e.message}</p>`;
+      }
+    }
+
+    function cerrarDetalle() {
+      document.getElementById('overlayDetalle').classList.remove('activo');
+    }
+
+    async function anularVenta(idFactura, numero) {
+      if (!confirm(`¿Anular la venta ${numero}? El stock vendido se repondrá automáticamente.`)) return;
+      try {
+        await api('anularVenta', { token: TOKEN, idFactura });
+        await Promise.all([cargarDatosBase(), cargarHistorial()]);
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#buscarProducto') && !e.target.closest('#resultadosProductos')) document.getElementById('resultadosProductos').classList.add('oculto');
+      if (!e.target.closest('#buscarCliente') && !e.target.closest('#resultadosClientes')) document.getElementById('resultadosClientes').classList.add('oculto');
+    });
+
+    window.onload = async () => {
+      const sesion = await requerirSesion();
+      if (!sesion) return;
+      await cargarConfig();
+      await cargarDatosBase();
+      await cargarHistorial();
+    };
+  </script>
+</body>
+</html>
