@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compras · Mi Tienda de Ropa</title>
+  <style>
+    :root {
+      --rosa: #f7a8c4;
+      --rosa-oscuro: #e0729e;
+      --blanco: #ffffff;
+      --gris: #8a8a8a;
+      --fondo: #fff5f8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0; background: var(--fondo); color: #333;
+    }
+    .contenedor { max-width: 1000px; width: 95%; margin: 20px auto; }
+
+    .topbar {
+      background: white; padding: 15px 20px; border-radius: 15px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 10px;
+    }
+    .marca { display: flex; align-items: center; gap: 10px; }
+    .marca img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
+    .marca strong { color: var(--rosa-oscuro); }
+    .btn-salir {
+      background: none; border: 1px solid #e05555; color: #e05555; cursor: pointer;
+      padding: 8px 14px; border-radius: 8px; font-weight: 600;
+    }
+
+    nav.tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 4px; }
+    nav.tabs a {
+      flex: none; text-decoration: none; color: var(--rosa-oscuro); background: white;
+      padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 2px solid transparent;
+    }
+    nav.tabs a.activo { border-color: var(--rosa-oscuro); background: var(--rosa); color: white; }
+
+    .resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 22px; }
+    .stat-card { background: white; border-radius: 15px; padding: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .stat-card .valor { font-size: 22px; font-weight: 700; color: var(--rosa-oscuro); }
+    .stat-card .label { font-size: 12px; color: var(--gris); text-transform: uppercase; margin-top: 4px; }
+
+    .panel {
+      background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      margin-bottom: 22px;
+    }
+    .panel h2.seccion { font-size: 15px; color: var(--rosa-oscuro); margin: 0 0 16px; }
+
+    .fila-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .fila-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+    .campo { margin-bottom: 12px; }
+    .campo label { display: block; font-size: 12px; color: var(--gris); margin-bottom: 5px; font-weight: 600; }
+    .campo input, .campo select {
+      width: 100%; padding: 10px 12px; border-radius: 9px; border: 1px solid #f0d0dc; font-size: 13px;
+    }
+    .campo input[readonly] { background: #fafafa; color: #888; }
+
+    .btn-primario {
+      background: var(--rosa-oscuro); color: white; border: none; padding: 11px 20px;
+      border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 13px;
+    }
+    .btn-primario:hover { background: #c95d87; }
+    .btn-primario:disabled { opacity: 0.6; cursor: default; }
+
+    .mensaje-error { color: #c0447a; font-size: 12px; margin-top: 6px; display: none; }
+    .mensaje-ok { color: #2a8a4a; font-size: 12px; margin-top: 6px; display: none; }
+
+    h2.seccion-tabla { font-size: 15px; color: var(--rosa-oscuro); margin: 0 0 10px; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
+    th { color: var(--rosa-oscuro); font-size: 11px; text-transform: uppercase; background: #fdf1f5; }
+    .cargando { text-align: center; padding: 20px; color: var(--gris); font-size: 13px; }
+    .buscador-tabla {
+      width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid #f0d0dc;
+      font-size: 13px; background: white; margin-bottom: 12px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="contenedor">
+    <div class="topbar">
+      <div class="marca">
+        <img id="logoImg" src="" alt="" style="display:none;">
+        <strong id="appTienda">Mi Tienda de Ropa</strong> · <span id="appUser"></span>
+      </div>
+      <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
+    </div>
+
+    <nav class="tabs">
+      <a href="dashboard.html">🏠 Panel</a>
+      <a href="inventario.html">📦 Inventario</a>
+      <a href="ventas.html">🧾 Ventas</a>
+      <a href="clientes.html">👥 Clientes</a>
+      <a href="compras.html" class="activo">🛒 Compras</a>
+      <a href="caja.html">💰 Caja</a>
+      <a href="reportes.html">📊 Reportes</a>
+    </nav>
+
+    <div class="resumen" id="resumenStats"></div>
+
+    <div class="panel">
+      <h2 class="seccion">Registrar nueva compra</h2>
+
+      <div class="fila-2">
+        <div class="campo">
+          <label>Proveedor</label>
+          <select id="pProveedor">
+            <option value="">Cargando proveedores...</option>
+          </select>
+        </div>
+        <div class="campo">
+          <label>N.º factura de compra</label>
+          <input type="text" id="pFactura" placeholder="Opcional">
+        </div>
+      </div>
+
+      <div class="campo">
+        <label>Producto</label>
+        <select id="pProducto" onchange="alSeleccionarProducto()">
+          <option value="">Cargando inventario...</option>
+        </select>
+      </div>
+
+      <div class="fila-3">
+        <div class="campo">
+          <label>Cantidad</label>
+          <input type="number" id="pCantidad" min="1" value="1" oninput="recalcularTotal()">
+        </div>
+        <div class="campo">
+          <label>Costo unitario</label>
+          <input type="number" id="pCosto" min="0" step="0.01" oninput="recalcularTotal()">
+        </div>
+        <div class="campo">
+          <label>Total compra</label>
+          <input type="text" id="pTotal" readonly value="$0">
+        </div>
+      </div>
+
+      <button class="btn-primario" id="btnRegistrar" onclick="registrarCompra()">Registrar compra y sumar al stock</button>
+      <div class="mensaje-error" id="errorForm"></div>
+      <div class="mensaje-ok" id="okForm"></div>
+    </div>
+
+    <h2 class="seccion-tabla">Historial de compras</h2>
+    <input type="text" class="buscador-tabla" id="buscador" placeholder="Buscar por producto, proveedor o factura..." oninput="filtrarCompras()">
+    <table>
+      <thead>
+        <tr><th>Fecha</th><th>Factura</th><th>Proveedor</th><th>Producto</th><th>Cant.</th><th>Costo Unit.</th><th>Total</th><th>Usuario</th></tr>
+      </thead>
+      <tbody id="listaCompras"><tr><td colspan="8" class="cargando">Cargando compras...</td></tr></tbody>
+    </table>
+  </div>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwF0T4dFM_SbfCxq6dBBSdQBL_xP2R64RZFJW-ly0AGiEWuRvVrIHXV7AQ2WrchaT_W/exec';
+    let INVENTARIO = [];
+    let PROVEEDORES = [];
+    let TODAS_LAS_COMPRAS = [];
+
+    async function api(accion, params = {}, metodo = 'POST') {
+      const url = metodo === 'GET' ? `${API_URL}?action=${accion}&${new URLSearchParams(params)}` : API_URL;
+      const config = {
+        method: metodo,
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: metodo === 'GET' ? undefined : JSON.stringify({ action: accion, ...params })
+      };
+      const res = await fetch(url, config);
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error);
+      return json.data;
+    }
+
+    function getToken() { return localStorage.getItem('pos_token'); }
+
+    function cerrarSesion() {
+      const token = getToken();
+      if (token) api('logoutSesion', { token }).catch(() => {});
+      localStorage.removeItem('pos_token');
+      localStorage.removeItem('pos_usuario');
+      window.location.href = 'index.html';
+    }
+
+    async function requerirSesion() {
+      const token = getToken();
+      if (!token) { window.location.href = 'index.html'; return null; }
+      try {
+        const sesion = await api('validarSesion', { token }, 'GET');
+        document.getElementById('appUser').innerText = `${sesion.nombre} (${sesion.rol})`;
+        return sesion;
+      } catch (e) {
+        localStorage.removeItem('pos_token');
+        localStorage.removeItem('pos_usuario');
+        window.location.href = 'index.html';
+        return null;
+      }
+    }
+
+    async function cargarConfig() {
+      try {
+        const config = await api('getConfigPublica', {}, 'GET');
+        document.getElementById('appTienda').innerText = config.nombreEmpresa || 'Mi Tienda de Ropa';
+        if (config.logoUrl) {
+          const img = document.getElementById('logoImg');
+          img.src = config.logoUrl;
+          img.style.display = 'inline-block';
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    async function cargarProveedores() {
+      const select = document.getElementById('pProveedor');
+      try {
+        const data = await api('getProveedores', {}, 'GET');
+        PROVEEDORES = data.filter(p => p.estado !== 'Inactivo');
+        if (PROVEEDORES.length === 0) {
+          select.innerHTML = '<option value="">No hay proveedores registrados</option>';
+          return;
+        }
+        select.innerHTML = '<option value="">Selecciona un proveedor...</option>' +
+          PROVEEDORES.map(p => `<option value="${p.empresa}">${p.empresa}</option>`).join('');
+      } catch (e) {
+        select.innerHTML = '<option value="">Error cargando proveedores</option>';
+      }
+    }
+
+    async function cargarInventarioSelect() {
+      const select = document.getElementById('pProducto');
+      try {
+        const data = await api('getInventario', {}, 'GET');
+        INVENTARIO = data.filter(p => p.estado !== 'Inactivo');
+        if (INVENTARIO.length === 0) {
+          select.innerHTML = '<option value="">No hay productos en inventario</option>';
+          return;
+        }
+        select.innerHTML = '<option value="">Selecciona un producto...</option>' +
+          INVENTARIO.map(p => `<option value="${p.codigo}">${p.nombre} (${p.codigo}) — stock actual: ${p.stock}</option>`).join('');
+      } catch (e) {
+        select.innerHTML = '<option value="">Error cargando inventario</option>';
+      }
+    }
+
+    function alSeleccionarProducto() {
+      const codigo = document.getElementById('pProducto').value;
+      const producto = INVENTARIO.find(p => p.codigo === codigo);
+      if (producto && !document.getElementById('pCosto').value) {
+        document.getElementById('pCosto').value = producto.costo || '';
+      }
+      recalcularTotal();
+    }
+
+    function recalcularTotal() {
+      const cantidad = Number(document.getElementById('pCantidad').value) || 0;
+      const costo = Number(document.getElementById('pCosto').value) || 0;
+      const total = cantidad * costo;
+      document.getElementById('pTotal').value = '$' + total.toLocaleString('es-CO');
+    }
+
+    async function registrarCompra() {
+      const errorBox = document.getElementById('errorForm');
+      const okBox = document.getElementById('okForm');
+      errorBox.style.display = 'none';
+      okBox.style.display = 'none';
+
+      const codigo = document.getElementById('pProducto').value;
+      const cantidad = Number(document.getElementById('pCantidad').value);
+      const costoUnitario = Number(document.getElementById('pCosto').value);
+      const proveedor = document.getElementById('pProveedor').value;
+      const facturaCompra = document.getElementById('pFactura').value.trim();
+
+      if (!codigo) {
+        errorBox.innerText = 'Selecciona un producto.';
+        errorBox.style.display = 'block';
+        return;
+      }
+      if (!cantidad || cantidad <= 0) {
+        errorBox.innerText = 'La cantidad debe ser mayor a cero.';
+        errorBox.style.display = 'block';
+        return;
+      }
+      if (!costoUnitario || costoUnitario < 0) {
+        errorBox.innerText = 'Ingresa un costo unitario válido.';
+        errorBox.style.display = 'block';
+        return;
+      }
+
+      const producto = INVENTARIO.find(p => p.codigo === codigo);
+
+      const btn = document.getElementById('btnRegistrar');
+      btn.disabled = true;
+      btn.innerText = 'Registrando...';
+
+      try {
+        await api('registrarCompra', {
+          token: getToken(),
+          compra: {
+            facturaCompra,
+            proveedor,
+            codigo,
+            producto: producto ? producto.nombre : codigo,
+            cantidad,
+            costoUnitario
+          }
+        });
+
+        okBox.innerText = 'Compra registrada correctamente. El stock ya fue actualizado.';
+        okBox.style.display = 'block';
+
+        document.getElementById('pFactura').value = '';
+        document.getElementById('pCantidad').value = 1;
+        document.getElementById('pCosto').value = '';
+        document.getElementById('pProducto').value = '';
+        recalcularTotal();
+
+        await Promise.all([cargarInventarioSelect(), cargarCompras()]);
+      } catch (e) {
+        errorBox.innerText = e.message;
+        errorBox.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Registrar compra y sumar al stock';
+      }
+    }
+
+    function renderResumen(compras) {
+      const hoy = new Date();
+      const mesActual = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}`;
+      const delMes = compras.filter(c => String(c.fecha).startsWith(mesActual));
+      const totalMes = delMes.reduce((s, c) => s + Number(c.totalCompra), 0);
+      const totalGeneral = compras.reduce((s, c) => s + Number(c.totalCompra), 0);
+
+      document.getElementById('resumenStats').innerHTML = `
+        <div class="stat-card"><div class="valor">${compras.length}</div><div class="label">Compras registradas</div></div>
+        <div class="stat-card"><div class="valor">${delMes.length}</div><div class="label">Compras este mes</div></div>
+        <div class="stat-card"><div class="valor">$${totalMes.toLocaleString('es-CO')}</div><div class="label">Invertido este mes</div></div>
+        <div class="stat-card"><div class="valor">$${totalGeneral.toLocaleString('es-CO')}</div><div class="label">Invertido en total</div></div>
+      `;
+    }
+
+    function renderTabla(compras) {
+      const b = document.getElementById('listaCompras');
+      if (compras.length === 0) {
+        b.innerHTML = '<tr><td colspan="8" class="cargando">No se encontraron compras.</td></tr>';
+        return;
+      }
+      b.innerHTML = compras.slice().reverse().map(c => `
+        <tr>
+          <td>${c.fecha || '-'}</td>
+          <td>${c.facturaCompra || '-'}</td>
+          <td>${c.proveedor || '-'}</td>
+          <td>${c.producto || '-'}</td>
+          <td>${c.cantidad}</td>
+          <td>$${Number(c.costoUnitario).toLocaleString('es-CO')}</td>
+          <td>$${Number(c.totalCompra).toLocaleString('es-CO')}</td>
+          <td>${c.usuario || '-'}</td>
+        </tr>
+      `).join('');
+    }
+
+    async function cargarCompras() {
+      try {
+        const data = await api('getCompras', {}, 'GET');
+        TODAS_LAS_COMPRAS = data;
+        renderResumen(data);
+        renderTabla(data);
+      } catch (e) {
+        document.getElementById('listaCompras').innerHTML = `<tr><td colspan="8" class="cargando">Error cargando compras: ${e.message}</td></tr>`;
+      }
+    }
+
+    function filtrarCompras() {
+      const q = document.getElementById('buscador').value.trim().toLowerCase();
+      if (!q) { renderTabla(TODAS_LAS_COMPRAS); return; }
+      const filtradas = TODAS_LAS_COMPRAS.filter(c => {
+        const texto = `${c.producto || ''} ${c.proveedor || ''} ${c.facturaCompra || ''}`.toLowerCase();
+        return texto.includes(q);
+      });
+      renderTabla(filtradas);
+    }
+
+    window.onload = async () => {
+      const sesion = await requerirSesion();
+      if (!sesion) return;
+      await cargarConfig();
+      await Promise.all([cargarProveedores(), cargarInventarioSelect(), cargarCompras()]);
+    };
+  </script>
+</body>
+</html>
