@@ -15,33 +15,21 @@
     * { box-sizing: border-box; }
     body {
       font-family: 'Segoe UI', Arial, sans-serif;
-      margin: 0;
-      background: var(--fondo);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #333;
+      margin: 0; background: var(--fondo);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center; color: #333;
     }
 
     .auth-card {
-      background: var(--blanco);
-      border-radius: 20px;
-      padding: 36px 30px;
+      background: var(--blanco); border-radius: 20px; padding: 36px 30px;
       box-shadow: 0 10px 40px rgba(224, 114, 158, 0.18);
-      text-align: center;
-      width: 100%;
-      max-width: 380px;
+      text-align: center; width: 100%; max-width: 380px;
     }
 
     .logo-box {
-      width: 96px; height: 96px;
-      margin: 0 auto 16px;
-      border-radius: 50%;
-      background: var(--fondo);
-      border: 3px solid var(--rosa);
+      width: 96px; height: 96px; margin: 0 auto 16px; border-radius: 50%;
+      background: var(--fondo); border: 3px solid var(--rosa);
       display: flex; align-items: center; justify-content: center;
-      overflow: hidden; position: relative; cursor: pointer;
+      overflow: hidden; position: relative;
     }
     .logo-box img { width: 100%; height: 100%; object-fit: cover; }
     
@@ -49,23 +37,18 @@
     .subtitulo { font-size: 13px; color: var(--gris); margin-bottom: 20px; }
 
     input {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 12px;
-      border: 1.5px solid #f0d5e0;
-      border-radius: 10px;
-      outline: none;
+      width: 100%; padding: 12px; margin-bottom: 12px;
+      border: 1.5px solid #f0d5e0; border-radius: 10px; outline: none;
     }
     input:focus { border-color: var(--rosa-oscuro); }
 
     .btn-principal {
-      width: 100%;
-      padding: 12px;
+      width: 100%; padding: 12px;
       background: linear-gradient(135deg, var(--rosa), var(--rosa-oscuro));
       color: white; border: none; border-radius: 10px;
       font-weight: 600; cursor: pointer;
     }
-    .btn-principal:disabled { opacity: 0.6; }
+    .btn-principal:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .mensaje {
       font-size: 13px; padding: 10px; border-radius: 8px;
@@ -79,15 +62,16 @@
     .switch-modo a { color: var(--rosa-oscuro); text-decoration: none; font-weight: 600; cursor: pointer; }
 
     /* DASHBOARD */
-    #vistaApp { max-width: 900px; width: 95%; }
+    #vistaApp { max-width: 900px; width: 95%; margin: 20px; }
     .topbar {
       background: white; padding: 15px; border-radius: 15px;
       display: flex; justify-content: space-between; align-items: center;
       margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
-    table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; }
+    .tabla-contenedor { background: white; padding: 20px; border-radius: 15px; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 500px; }
     th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 14px; }
-    th { background: var(--rosa); color: white; }
+    th { color: var(--gris); font-weight: 600; text-transform: uppercase; font-size: 11px; }
   </style>
 </head>
 <body>
@@ -97,7 +81,7 @@
     <div class="logo-box">
       <img id="logoImg" src="https://via.placeholder.com/100?text=👗" alt="Logo">
     </div>
-    <h1 id="uiNombreTienda">Mi Tienda</h1>
+    <h1 id="uiNombreTienda">Mi Tienda de Ropa</h1>
     <div class="subtitulo" id="uiSubtitulo">Ingresa a tu cuenta</div>
 
     <div id="msgAuth" class="mensaje"></div>
@@ -106,16 +90,16 @@
     <div id="formLogin">
       <input type="text" id="logUser" placeholder="Usuario">
       <input type="password" id="logPass" placeholder="Contraseña">
-      <button class="btn-principal" onclick="ejecutarLogin()">Ingresar</button>
-      <div class="switch-modo">¿No tienes cuenta? <a onclick="cambiarVista(true)">Crear cuenta</a></div>
+      <button class="btn-principal" id="btnLog" onclick="ejecutarLogin()">Ingresar</button>
+      <div class="switch-modo">¿No tienes cuenta? <a onclick="cambiarVista(true)">Crear usuario</a></div>
     </div>
 
     <!-- Formulario Registro -->
     <div id="formReg" class="oculto">
       <input type="text" id="regNom" placeholder="Nombre completo">
       <input type="text" id="regUser" placeholder="Nombre de usuario">
-      <input type="password" id="regPass" placeholder="Contraseña (min. 4 car.)">
-      <button class="btn-principal" onclick="ejecutarRegistro()">Registrarme</button>
+      <input type="password" id="regPass" placeholder="Contraseña (mín. 4 car.)">
+      <button class="btn-principal" id="btnReg" onclick="ejecutarRegistro()">Crear cuenta</button>
       <div class="switch-modo">¿Ya tienes cuenta? <a onclick="cambiarVista(false)">Iniciar sesión</a></div>
     </div>
   </div>
@@ -124,73 +108,81 @@
   <div id="vistaApp" class="oculto">
     <div class="topbar">
       <div>
-        <strong id="appNombreTienda">Tienda</strong> | 
-        <span id="appUser">Usuario</span>
+        <strong id="appNombreTienda" style="color: var(--rosa-oscuro);">Tienda</strong> | 
+        <span id="appUser" style="font-size: 13px; color: var(--gris);">Usuario</span>
       </div>
-      <button onclick="cerrarSesion()" style="background:none; border:1px solid red; color:red; cursor:pointer; padding:5px 10px; border-radius:5px;">Salir</button>
+      <button onclick="location.reload()" style="background:none; border:1px solid var(--rosa-oscuro); color:var(--rosa-oscuro); cursor:pointer; padding:6px 12px; border-radius:8px; font-size: 12px; font-weight: 600;">Cerrar Sesión</button>
     </div>
 
-    <div style="background:white; padding:20px; border-radius:15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-      <h3>📦 Inventario Real</h3>
+    <div class="tabla-contenedor">
+      <h3 style="margin-top: 0; color: var(--rosa-oscuro);">📦 Inventario Actual</h3>
       <table id="tablaInv">
         <thead>
           <tr><th>Producto</th><th>Categoría</th><th>Stock</th><th>Precio</th></tr>
         </thead>
         <tbody id="bodyInv">
-          <tr><td colspan="4">Cargando productos...</td></tr>
+          <tr><td colspan="4">Cargando inventario...</td></tr>
         </tbody>
       </table>
     </div>
   </div>
 
   <script>
-    // TU URL PERSONALIZADA
-    const API_URL = 'https://script.google.com/macros/s/AKfycbxJbfkKfQys_MV7Mh_KcT0AZxBLcaUcgAiEFVuvGBD5IKlejeRKuxMeMSEJtT10VdcK/exec';
+    // TU URL ACTUALIZADA
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwF0T4dFM_SbfCxq6dBBSdQBL_xP2R64RZFJW-ly0AGiEWuRvVrIHXV7AQ2WrchaT_W/exec';
 
     let sesionActual = null;
 
-    // Función principal de comunicación con el Excel
+    /**
+     * Comunicación con Google Apps Script.
+     * Usamos 'text/plain' para evitar errores de preflight/CORS de Google.
+     */
     async function llamarAPI(accion, params = {}, metodo = 'POST') {
-      const config = {
-        method: 'POST', // Siempre usamos POST para evitar problemas de CORS con Apps Script
+      let url = API_URL;
+      let opciones = {
+        method: 'POST',
         mode: 'cors',
-        cache: 'no-cache',
-        body: JSON.stringify({ action: accion, ...params })
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
       };
 
-      // Si es GET, añadimos los parámetros a la URL (Apps Script prefiere esto para lecturas)
-      let urlFinal = API_URL;
+      const cuerpo = { action: accion, ...params };
+
       if (metodo === 'GET') {
-        const query = new URLSearchParams({ action: accion, ...params }).toString();
-        urlFinal += `?${query}`;
-        delete config.body;
-        config.method = 'GET';
+        const query = new URLSearchParams(cuerpo).toString();
+        url += `?${query}`;
+        delete opciones.headers;
+        opciones.method = 'GET';
+      } else {
+        opciones.body = JSON.stringify(cuerpo);
       }
 
       try {
-        const res = await fetch(urlFinal, config);
+        const res = await fetch(url, opciones);
         const texto = await res.text();
         
+        let json;
         try {
-          const json = JSON.parse(texto);
-          if (!json.ok) throw new Error(json.error);
-          return json.data;
+          json = JSON.parse(texto);
         } catch (e) {
-          console.error("Respuesta del servidor no es JSON:", texto);
-          throw new Error("El servidor envió una respuesta inválida. Revisa el despliegue en Google.");
+          console.error("Respuesta no es JSON:", texto);
+          throw new Error("El servidor de Google devolvió un error (HTML). Verifica que el script esté publicado como 'Cualquier persona'.");
         }
+
+        if (!json.ok) throw new Error(json.error || "Error desconocido en el servidor");
+        return json.data;
       } catch (err) {
+        console.error("Error en llamarAPI:", err);
         throw err;
       }
     }
 
-    // --- ACCIONES DE UI ---
+    // --- INTERFAZ ---
 
     function cambiarVista(irARegistro) {
       document.getElementById('formLogin').classList.toggle('oculto', irARegistro);
       document.getElementById('formReg').classList.toggle('oculto', !irARegistro);
       document.getElementById('uiSubtitulo').innerText = irARegistro ? 'Crea tu cuenta de vendedor' : 'Ingresa a tu cuenta';
-      limpiarMensaje();
+      document.getElementById('msgAuth').className = 'mensaje';
     }
 
     function mostrarMensaje(txt, tipo) {
@@ -199,42 +191,46 @@
       m.className = `mensaje ${tipo}`;
     }
 
-    function limpiarMensaje() {
-      document.getElementById('msgAuth').className = 'mensaje';
-    }
-
-    // --- LOGICA DE NEGOCIO ---
+    // --- LÓGICA ---
 
     async function ejecutarLogin() {
-      const usuario = document.getElementById('logUser').value;
+      const usuario = document.getElementById('logUser').value.trim();
       const password = document.getElementById('logPass').value;
-      
-      if(!usuario || !password) return mostrarMensaje("Completa los campos", "error");
+      const btn = document.getElementById('btnLog');
+
+      if(!usuario || !password) return mostrarMensaje("Escribe usuario y contraseña", "error");
 
       try {
-        mostrarMensaje("Verificando...", "ok");
+        btn.disabled = true;
+        mostrarMensaje("Validando...", "ok");
         const data = await llamarAPI('login', { usuario, password });
         sesionActual = data;
         entrarAlApp();
       } catch (e) {
         mostrarMensaje(e.message, "error");
+      } finally {
+        btn.disabled = false;
       }
     }
 
     async function ejecutarRegistro() {
-      const nombre = document.getElementById('regNom').value;
-      const usuario = document.getElementById('regUser').value;
+      const nombre = document.getElementById('regNom').value.trim();
+      const usuario = document.getElementById('regUser').value.trim();
       const password = document.getElementById('regPass').value;
+      const btn = document.getElementById('btnReg');
 
-      if(!nombre || !usuario || !password) return mostrarMensaje("Faltan datos", "error");
+      if(!nombre || !usuario || !password) return mostrarMensaje("Completa todos los campos", "error");
 
       try {
-        mostrarMensaje("Creando cuenta...", "ok");
+        btn.disabled = true;
+        mostrarMensaje("Registrando...", "ok");
         await llamarAPI('registrarUsuario', { nombre, usuario, password });
-        mostrarMensaje("Cuenta creada. Ya puedes iniciar sesión.", "ok");
-        cambiarVista(false);
+        mostrarMensaje("¡Cuenta creada! Ya puedes iniciar sesión.", "ok");
+        setTimeout(() => cambiarVista(false), 2000);
       } catch (e) {
         mostrarMensaje(e.message, "error");
+      } finally {
+        btn.disabled = false;
       }
     }
 
@@ -252,37 +248,38 @@
         const body = document.getElementById('bodyInv');
         body.innerHTML = '';
 
-        if(productos.length === 0) {
-          body.innerHTML = '<tr><td colspan="4">No hay productos en la hoja "Inventario"</td></tr>';
+        if(!productos || productos.length === 0) {
+          body.innerHTML = '<tr><td colspan="4">Inventario vacío. Agregue productos en el Excel.</td></tr>';
           return;
         }
 
         productos.forEach(p => {
-          const row = `<tr>
+          const row = document.createElement('tr');
+          row.innerHTML = `
             <td>${p.producto}</td>
             <td>${p.categoria || '-'}</td>
-            <td style="color: ${p.stock <= p.stockMinimo ? 'red' : 'black'}">${p.stock}</td>
+            <td style="color: ${p.stock <= p.stockMinimo ? 'red' : 'inherit'}; font-weight: ${p.stock <= p.stockMinimo ? 'bold' : 'normal'}">${p.stock}</td>
             <td>$${p.precio}</td>
-          </tr>`;
-          body.innerHTML += row;
+          `;
+          body.appendChild(row);
         });
       } catch (e) {
-        console.error(e);
+        console.error("Error cargando inventario:", e);
       }
     }
 
-    function cerrarSesion() {
-      location.reload();
-    }
-
-    // Al cargar la página, traer configuración visual
+    // Al iniciar, cargar configuración de la tienda
     window.onload = async () => {
       try {
         const config = await llamarAPI('getConfigPublica', {}, 'GET');
-        document.getElementById('uiNombreTienda').innerText = config.nombreEmpresa;
-        if(config.logoUrl) document.getElementById('logoImg').src = config.logoUrl;
+        if(config.nombreEmpresa) {
+          document.getElementById('uiNombreTienda').innerText = config.nombreEmpresa;
+        }
+        if(config.logoUrl) {
+          document.getElementById('logoImg').src = config.logoUrl;
+        }
       } catch (e) {
-        console.log("Error inicial:", e);
+        console.warn("No se pudo cargar la configuración inicial (posiblemente hojas vacías).");
       }
     };
   </script>
