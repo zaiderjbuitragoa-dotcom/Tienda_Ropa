@@ -67,6 +67,10 @@
     .error { background: #fde5ec; color: #c0447a; display: block; }
     .ok { background: #e6f7ea; color: #2a8a4a; display: block; }
 
+    .acciones-factura { display: none; gap: 8px; margin-top: 10px; }
+    .acciones-factura.activo { display: flex; }
+    .acciones-factura button { flex: 1; }
+
     table.historial { width: 100%; border-collapse: collapse; }
     table.historial th, table.historial td { padding: 10px; font-size: 12.5px; border-bottom: 1px solid #f2e6ec; text-align: left; }
     table.historial th { color: var(--rosa-oscuro); font-size: 10.5px; text-transform: uppercase; }
@@ -157,6 +161,11 @@
         </div>
 
         <button class="btn-principal" id="btnCobrar" onclick="registrarVenta()">Registrar venta</button>
+
+        <div class="acciones-factura" id="accionesFactura">
+          <button class="btn-secundario" onclick="descargarPDF(ULTIMA_FACTURA)">📄 Descargar PDF</button>
+          <button class="btn-secundario" onclick="enviarFacturaWA(ULTIMA_FACTURA)">📲 Enviar WhatsApp</button>
+        </div>
       </div>
     </div>
   </div>
@@ -166,11 +175,17 @@
     <div class="modal">
       <h2 id="detalleTitulo">Factura</h2>
       <div id="detalleContenido"></div>
-      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px; flex-wrap: wrap;">
+        <button class="btn-secundario" onclick="descargarPDF(FACTURA_ACTUAL)">📄 Descargar PDF</button>
+        <button class="btn-secundario" onclick="enviarFacturaWA(FACTURA_ACTUAL)">📲 WhatsApp</button>
         <button class="btn-secundario" onclick="cerrarDetalle()">Cerrar</button>
       </div>
     </div>
   </div>
+
+  <!-- jsPDF + plugin de tablas (autoTable), corren 100% en el navegador -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
   <script>
     const API_URL = 'https://script.google.com/macros/s/AKfycbwF0T4dFM_SbfCxq6dBBSdQBL_xP2R64RZFJW-ly0AGiEWuRvVrIHXV7AQ2WrchaT_W/exec';
@@ -180,6 +195,13 @@
     let CARRITO = [];
     let CLIENTE_SELECCIONADO = null;
     let CONFIG = { iva: 0.19, moneda: '$' };
+
+    // Datos de la última factura cobrada (para el botón PDF/WhatsApp de la derecha)
+    let ULTIMA_FACTURA = null;
+    // Facturas cargadas en el historial (para poder reconstruir el detalle sin volver a pedir todo)
+    let FACTURAS_HISTORIAL = [];
+    // Datos de la factura abierta en el modal "Ver" (para el botón PDF/WhatsApp del modal)
+    let FACTURA_ACTUAL = null;
 
     async function api(accion, params = {}, metodo = 'POST') {
       const url = metodo === 'GET' ? `${API_URL}?action=${accion}&${new URLSearchParams(params)}` : API_URL;
@@ -342,10 +364,153 @@
       document.getElementById('totTotal').innerText = m + total.toLocaleString('es-CO');
     }
 
+    // ---------- PDF (jsPDF) ----------
+    // Construye un objeto de factura "estándar" que usa generarPDF(), tanto si viene
+    // de una venta recién cobrada como si viene del historial.
+    function construirDatosFacturaVenta(venta, res, itemsCarrito, clienteObj) {
+      const { subtotal, descuento, iva } = calcularTotales();
+      const total = res && res.total !== undefined ? Number(res.total) : calcularTotales().total;
+      return {
+        numero: res ? res.numeroFactura : '',
+        fecha: (res && res.fecha) ? res.fecha : new Date().toLocaleString('es-CO'),
+        cliente: clienteObj ? `${clienteObj.nombre} ${clienteObj.apellido || ''}`.trim() : 'Consumidor final',
+        documento: clienteObj ? (clienteObj.documento || '') : '',
+        telefono: clienteObj ? (clienteObj.telefono || '') : '',
+        formaPago: venta.formaPago,
+        observaciones: venta.observaciones,
+        items: itemsCarrito.map(it => ({
+          producto: it.producto, talla: it.talla, color: it.color,
+          cantidad: it.cantidad, precio: it.precio, total: it.precio * it.cantidad - it.descuento
+        })),
+        subtotal, descuento, iva, total
+      };
+    }
+
+    // Genera el documento jsPDF a partir de un objeto de factura estándar.
+    function generarPDF(datos) {
+      if (!datos) { alert('No hay datos de factura para generar el PDF'); return null; }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      const m = CONFIG.moneda || '$';
+      const nombreEmpresa = CONFIG.nombreEmpresa || 'Mi Tienda de Ropa';
+
+      doc.setFontSize(16);
+      doc.setTextColor(224, 114, 158);
+      doc.text(nombreEmpresa, 14, 18);
+
+      let y = 25;
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      if (CONFIG.nit) { doc.text(`NIT: ${CONFIG.nit}`, 14, y); y += 5; }
+      if (CONFIG.direccion) { doc.text(String(CONFIG.direccion), 14, y); y += 5; }
+      if (CONFIG.telefonoEmpresa) { doc.text(`Tel: ${CONFIG.telefonoEmpresa}`, 14, y); y += 5; }
+
+      doc.setFontSize(12);
+      doc.setTextColor(0);
+      doc.text(`Factura de venta N° ${datos.numero}`, 14, y + 5);
+
+      doc.setFontSize(9);
+      doc.setTextColor(80);
+      doc.text(`Fecha: ${datos.fecha}`, 14, y + 12);
+      doc.text(`Cliente: ${datos.cliente}`, 14, y + 17);
+      if (datos.documento) doc.text(`Documento: ${datos.documento}`, 14, y + 22);
+      if (datos.formaPago) doc.text(`Forma de pago: ${datos.formaPago}`, 130, y + 12);
+
+      const filas = (datos.items || []).map(it => [
+        `${it.producto}${it.talla ? ' · ' + it.talla : ''}${it.color ? ' · ' + it.color : ''}`,
+        it.cantidad,
+        `${m}${Number(it.precio).toLocaleString('es-CO')}`,
+        `${m}${Number(it.total).toLocaleString('es-CO')}`
+      ]);
+
+      doc.autoTable({
+        startY: y + 28,
+        head: [['Producto', 'Cant.', 'Precio', 'Total']],
+        body: filas,
+        headStyles: { fillColor: [224, 114, 158] },
+        styles: { fontSize: 9 },
+        margin: { left: 14, right: 14 }
+      });
+
+      let finalY = doc.lastAutoTable.finalY + 8;
+      doc.setFontSize(10);
+      doc.setTextColor(60);
+      doc.text(`Subtotal: ${m}${Number(datos.subtotal || 0).toLocaleString('es-CO')}`, 140, finalY);
+      finalY += 6;
+      if (datos.descuento) { doc.text(`Descuento: -${m}${Number(datos.descuento).toLocaleString('es-CO')}`, 140, finalY); finalY += 6; }
+      if (datos.iva) { doc.text(`IVA: ${m}${Number(datos.iva).toLocaleString('es-CO')}`, 140, finalY); finalY += 6; }
+      doc.setFontSize(12);
+      doc.setTextColor(224, 114, 158);
+      doc.text(`Total: ${m}${Number(datos.total || 0).toLocaleString('es-CO')}`, 140, finalY + 2);
+
+      if (datos.observaciones) {
+        doc.setFontSize(9);
+        doc.setTextColor(100);
+        doc.text(`Obs: ${datos.observaciones}`, 14, Math.max(finalY + 15, 260));
+      }
+
+      doc.setFontSize(8);
+      doc.setTextColor(150);
+      doc.text('Gracias por tu compra', 14, 287);
+
+      return doc;
+    }
+
+    function descargarPDF(datos) {
+      const doc = generarPDF(datos);
+      if (!doc) return;
+      doc.save(`Factura_${datos.numero || 'venta'}.pdf`);
+    }
+
+    function telefonoWA(tel) {
+      if (!tel) return '';
+      let limpio = String(tel).replace(/\D/g, '');
+      if (limpio.length === 10) limpio = '57' + limpio; // prefijo Colombia
+      return limpio;
+    }
+
+    function construirMensajeWA(datos) {
+      const hora = new Date().getHours();
+      const saludo = hora < 12 ? '¡Buenos días!' : hora < 18 ? '¡Buenas tardes!' : '¡Buenas noches!';
+      const m = CONFIG.moneda || '$';
+      const nombreEmpresa = CONFIG.nombreEmpresa || 'Mi Tienda de Ropa';
+      return `${saludo}\n\nGracias por tu compra en *${nombreEmpresa}* 💖\n\n🧾 Factura: ${datos.numero}\n📅 Fecha: ${datos.fecha}\n💰 Total: ${m}${Number(datos.total || 0).toLocaleString('es-CO')}\n\nEn un momento recibirás el PDF de tu factura. ¡Gracias por preferirnos!`;
+    }
+
+    // Intenta compartir el PDF directamente (funciona en celulares con Web Share API,
+    // abre el selector nativo incluyendo WhatsApp). Si el navegador no lo soporta,
+    // descarga el PDF y abre WhatsApp con el mensaje de texto para que lo adjuntes manualmente:
+    // WhatsApp no permite adjuntar archivos automáticamente desde un enlace wa.me.
+    async function enviarFacturaWA(datos) {
+      const doc = generarPDF(datos);
+      if (!doc) return;
+      const texto = construirMensajeWA(datos);
+      const numeroDestino = telefonoWA(datos.telefono);
+
+      try {
+        const blob = doc.output('blob');
+        const archivo = new File([blob], `Factura_${datos.numero || 'venta'}.pdf`, { type: 'application/pdf' });
+        if (navigator.canShare && navigator.canShare({ files: [archivo] })) {
+          await navigator.share({ files: [archivo], title: `Factura ${datos.numero}`, text: texto });
+          return;
+        }
+      } catch (e) {
+        if (e && e.name === 'AbortError') return; // el usuario canceló el share, no hacemos nada más
+      }
+
+      // Fallback: descarga el PDF y abre WhatsApp con el mensaje (adjuntar el PDF queda manual)
+      doc.save(`Factura_${datos.numero || 'venta'}.pdf`);
+      const url = numeroDestino
+        ? `https://wa.me/${numeroDestino}?text=${encodeURIComponent(texto + '\n\n(Adjunta el PDF que se acaba de descargar)')}`
+        : `https://wa.me/?text=${encodeURIComponent(texto + '\n\n(Adjunta el PDF que se acaba de descargar)')}`;
+      window.open(url, '_blank');
+    }
+
     // ---------- REGISTRAR VENTA ----------
     async function registrarVenta() {
       const msg = document.getElementById('ventaMsg');
       msg.style.display = 'none';
+      document.getElementById('accionesFactura').classList.remove('activo');
       if (CARRITO.length === 0) { msg.innerText = 'Agrega al menos un producto al carrito'; msg.className = 'mensaje error'; return; }
 
       const venta = {
@@ -360,6 +525,11 @@
       btn.disabled = true; btn.innerText = 'Registrando...';
       try {
         const res = await api('crearVenta', { token: TOKEN, venta });
+
+        // Construimos los datos de la factura ANTES de vaciar el carrito, para el PDF/WhatsApp
+        ULTIMA_FACTURA = construirDatosFacturaVenta(venta, res, CARRITO, CLIENTE_SELECCIONADO);
+        document.getElementById('accionesFactura').classList.add('activo');
+
         msg.innerText = `Venta ${res.numeroFactura} registrada por $${Number(res.total).toLocaleString('es-CO')}`;
         msg.className = 'mensaje ok';
         CARRITO = [];
@@ -382,6 +552,7 @@
       const b = document.getElementById('historialBody');
       try {
         const facturas = await api('getFacturas', {}, 'GET');
+        FACTURAS_HISTORIAL = facturas;
         const recientes = facturas.slice(-15).reverse();
         if (recientes.length === 0) { b.innerHTML = '<tr><td colspan="6" class="cargando">Aún no hay ventas registradas.</td></tr>'; return; }
         b.innerHTML = recientes.map(f => `
@@ -392,7 +563,7 @@
             <td>$${Number(f.total).toLocaleString('es-CO')}</td>
             <td><span class="badge ${f.estado === 'Anulada' ? 'badge-anulada' : 'badge-pagada'}">${f.estado}</span></td>
             <td>
-              <button class="btn-secundario" onclick="verDetalle(${f.id}, '${f.numero}')">Ver</button>
+              <button class="btn-secundario" onclick="verDetalle(${f.id})">Ver</button>
               ${f.estado !== 'Anulada' ? `<button class="btn-secundario" onclick="anularVenta(${f.id}, '${f.numero}')">Anular</button>` : ''}
             </td>
           </tr>`).join('');
@@ -401,10 +572,12 @@
       }
     }
 
-    async function verDetalle(idFactura, numero) {
-      document.getElementById('detalleTitulo').innerText = 'Factura ' + numero;
+    async function verDetalle(idFactura) {
+      const f = FACTURAS_HISTORIAL.find(x => x.id === idFactura) || {};
+      document.getElementById('detalleTitulo').innerText = 'Factura ' + (f.numero || '');
       document.getElementById('detalleContenido').innerHTML = '<p class="cargando">Cargando...</p>';
       document.getElementById('overlayDetalle').classList.add('activo');
+      FACTURA_ACTUAL = null;
       try {
         const detalle = await api('getDetalleFactura', { idFactura }, 'GET');
         document.getElementById('detalleContenido').innerHTML = detalle.length === 0 ? '<p>Sin ítems.</p>' : `
@@ -412,6 +585,25 @@
             <thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Total</th></tr></thead>
             <tbody>${detalle.map(d => `<tr><td>${d.producto} ${d.talla ? '· ' + d.talla : ''}</td><td>${d.cantidad}</td><td>$${Number(d.precio).toLocaleString('es-CO')}</td><td>$${Number(d.total).toLocaleString('es-CO')}</td></tr>`).join('')}</tbody>
           </table>`;
+
+        // Armamos los datos de factura estándar para el PDF/WhatsApp del modal.
+        // subtotal/descuento/iva se toman de la fila del historial si el backend los envía;
+        // si no, se recalculan a partir de los ítems para no romper si no vienen.
+        const subtotalCalc = detalle.reduce((s, d) => s + Number(d.total || 0), 0);
+        FACTURA_ACTUAL = {
+          numero: f.numero || '',
+          fecha: f.fecha || '',
+          cliente: f.cliente || 'Consumidor final',
+          documento: f.documento || '',
+          telefono: f.telefono || '',
+          formaPago: f.formaPago || '',
+          observaciones: f.observaciones || '',
+          items: detalle.map(d => ({ producto: d.producto, talla: d.talla, color: d.color, cantidad: d.cantidad, precio: d.precio, total: d.total })),
+          subtotal: f.subtotal !== undefined ? Number(f.subtotal) : subtotalCalc,
+          descuento: f.descuento !== undefined ? Number(f.descuento) : 0,
+          iva: f.iva !== undefined ? Number(f.iva) : 0,
+          total: Number(f.total || subtotalCalc)
+        };
       } catch (e) {
         document.getElementById('detalleContenido').innerHTML = `<p class="mensaje error">${e.message}</p>`;
       }
