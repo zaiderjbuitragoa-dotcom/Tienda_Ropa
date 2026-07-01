@@ -276,8 +276,11 @@
       const cont = document.getElementById('resultadosProductos');
       if (!q) { cont.classList.add('oculto'); cont.innerHTML = ''; return; }
 
-      const resultados = PRODUCTOS.filter(p => p.estado !== 'Inactivo' && Number(p.stock) > 0 &&
-        (`${p.nombre} ${p.codigo}`.toLowerCase().includes(q))).slice(0, 8);
+      const resultados = PRODUCTOS.filter(p => {
+        if (p.estado === 'Inactivo' || Number(p.stock) <= 0) return false;
+        const texto = [p.nombre, p.codigo, p.categoria, p.talla, p.color].filter(Boolean).join(' ').toLowerCase();
+        return texto.includes(q);
+      }).slice(0, 8);
 
       if (resultados.length === 0) {
         cont.innerHTML = '<div class="resultado-item">Sin resultados con stock disponible</div>';
