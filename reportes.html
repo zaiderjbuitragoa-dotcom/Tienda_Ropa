@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reportes · Mi Tienda de Ropa</title>
+  <style>
+    :root {
+      --rosa: #f7a8c4;
+      --rosa-oscuro: #e0729e;
+      --blanco: #ffffff;
+      --gris: #8a8a8a;
+      --fondo: #fff5f8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0; background: var(--fondo); color: #333;
+    }
+    .contenedor { max-width: 1000px; width: 95%; margin: 20px auto; }
+
+    .topbar {
+      background: white; padding: 15px 20px; border-radius: 15px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 10px;
+    }
+    .marca { display: flex; align-items: center; gap: 10px; }
+    .marca img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
+    .marca strong { color: var(--rosa-oscuro); }
+    .btn-salir {
+      background: none; border: 1px solid #e05555; color: #e05555; cursor: pointer;
+      padding: 8px 14px; border-radius: 8px; font-weight: 600;
+    }
+
+    nav.tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 4px; }
+    nav.tabs a {
+      flex: none; text-decoration: none; color: var(--rosa-oscuro); background: white;
+      padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 2px solid transparent;
+    }
+    nav.tabs a.activo { border-color: var(--rosa-oscuro); background: var(--rosa); color: white; }
+
+    .panel-filtro {
+      background: white; border-radius: 16px; padding: 18px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+      margin-bottom: 22px; display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end;
+    }
+    .campo { display: flex; flex-direction: column; gap: 5px; }
+    .campo label { font-size: 12px; color: var(--gris); font-weight: 600; }
+    .campo input {
+      padding: 10px 12px; border-radius: 9px; border: 1px solid #f0d0dc; font-size: 13px;
+    }
+    .btn-primario {
+      background: var(--rosa-oscuro); color: white; border: none; padding: 11px 20px;
+      border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 13px;
+    }
+    .btn-primario:hover { background: #c95d87; }
+    .btn-primario:disabled { opacity: 0.6; cursor: default; }
+    .accesos-rapidos { display: flex; gap: 6px; flex-wrap: wrap; }
+    .btn-chip {
+      background: #fdf1f5; color: var(--rosa-oscuro); border: none; padding: 8px 12px;
+      border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;
+    }
+    .btn-chip:hover { background: var(--rosa); color: white; }
+
+    .resumen { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 25px; }
+    .stat-card { background: white; border-radius: 15px; padding: 18px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    .stat-card .valor { font-size: 22px; font-weight: 700; color: var(--rosa-oscuro); }
+    .stat-card .label { font-size: 12px; color: var(--gris); text-transform: uppercase; margin-top: 4px; }
+
+    h2.seccion { font-size: 15px; color: var(--rosa-oscuro); margin: 25px 0 10px; }
+    table { width: 100%; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; font-size: 13px; }
+    th { color: var(--rosa-oscuro); font-size: 11px; text-transform: uppercase; background: #fdf1f5; }
+    .badge { padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+    .badge-bajo { background: #fde5ec; color: #c0447a; }
+    .badge-pagada { background: #e6f7ea; color: #2a8a4a; }
+    .badge-anulada { background: #f0f0f0; color: #888; }
+    .cargando { text-align: center; padding: 20px; color: var(--gris); font-size: 13px; }
+    .rango-actual { font-size: 12px; color: var(--gris); margin: -14px 0 18px; }
+  </style>
+</head>
+<body>
+
+  <div class="contenedor">
+    <div class="topbar">
+      <div class="marca">
+        <img id="logoImg" src="" alt="" style="display:none;">
+        <strong id="appTienda">Mi Tienda de Ropa</strong> · <span id="appUser"></span>
+      </div>
+      <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
+    </div>
+
+    <nav class="tabs">
+      <a href="dashboard.html">🏠 Panel</a>
+      <a href="inventario.html">📦 Inventario</a>
+      <a href="ventas.html">🧾 Ventas</a>
+      <a href="clientes.html">👥 Clientes</a>
+      <a href="compras.html">🛒 Compras</a>
+      <a href="caja.html">💰 Caja</a>
+      <a href="reportes.html" class="activo">📊 Reportes</a>
+    </nav>
+
+    <div class="panel-filtro">
+      <div class="campo">
+        <label>Desde</label>
+        <input type="date" id="fDesde">
+      </div>
+      <div class="campo">
+        <label>Hasta</label>
+        <input type="date" id="fHasta">
+      </div>
+      <button class="btn-primario" onclick="cargarReporte()">Generar reporte</button>
+      <div class="accesos-rapidos">
+        <button class="btn-chip" onclick="rangoRapido('hoy')">Hoy</button>
+        <button class="btn-chip" onclick="rangoRapido('semana')">Últimos 7 días</button>
+        <button class="btn-chip" onclick="rangoRapido('mes')">Este mes</button>
+      </div>
+    </div>
+    <p class="rango-actual" id="rangoActual"></p>
+
+    <div class="resumen" id="resumenStats">
+      <div class="stat-card"><div class="valor">…</div><div class="label">Cargando</div></div>
+    </div>
+
+    <h2 class="seccion">Productos más vendidos</h2>
+    <table>
+      <thead><tr><th>Producto</th><th>Unidades vendidas</th><th>Total generado</th></tr></thead>
+      <tbody id="listaTop"><tr><td colspan="3" class="cargando">Cargando...</td></tr></tbody>
+    </table>
+
+    <h2 class="seccion">Productos con stock bajo</h2>
+    <table>
+      <thead><tr><th>Producto</th><th>Categoría</th><th>Stock actual</th><th>Stock mínimo</th></tr></thead>
+      <tbody id="listaStockBajo"><tr><td colspan="4" class="cargando">Cargando...</td></tr></tbody>
+    </table>
+
+    <h2 class="seccion">Facturas del periodo</h2>
+    <table>
+      <thead><tr><th>Fecha</th><th>N.º Factura</th><th>Cliente</th><th>Forma de pago</th><th>Total</th><th>Estado</th></tr></thead>
+      <tbody id="listaFacturas"><tr><td colspan="6" class="cargando">Cargando...</td></tr></tbody>
+    </table>
+  </div>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwF0T4dFM_SbfCxq6dBBSdQBL_xP2R64RZFJW-ly0AGiEWuRvVrIHXV7AQ2WrchaT_W/exec';
+
+    async function api(accion, params = {}, metodo = 'POST') {
+      const url = metodo === 'GET' ? `${API_URL}?action=${accion}&${new URLSearchParams(params)}` : API_URL;
+      const config = {
+        method: metodo,
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: metodo === 'GET' ? undefined : JSON.stringify({ action: accion, ...params })
+      };
+      const res = await fetch(url, config);
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error);
+      return json.data;
+    }
+
+    function getToken() { return localStorage.getItem('pos_token'); }
+
+    function cerrarSesion() {
+      const token = getToken();
+      if (token) api('logoutSesion', { token }).catch(() => {});
+      localStorage.removeItem('pos_token');
+      localStorage.removeItem('pos_usuario');
+      window.location.href = 'index.html';
+    }
+
+    async function requerirSesion() {
+      const token = getToken();
+      if (!token) { window.location.href = 'index.html'; return null; }
+      try {
+        const sesion = await api('validarSesion', { token }, 'GET');
+        document.getElementById('appUser').innerText = `${sesion.nombre} (${sesion.rol})`;
+        return sesion;
+      } catch (e) {
+        localStorage.removeItem('pos_token');
+        localStorage.removeItem('pos_usuario');
+        window.location.href = 'index.html';
+        return null;
+      }
+    }
+
+    async function cargarConfig() {
+      try {
+        const config = await api('getConfigPublica', {}, 'GET');
+        document.getElementById('appTienda').innerText = config.nombreEmpresa || 'Mi Tienda de Ropa';
+        if (config.logoUrl) {
+          const img = document.getElementById('logoImg');
+          img.src = config.logoUrl;
+          img.style.display = 'inline-block';
+        }
+      } catch (e) { console.error(e); }
+    }
+
+    function fmtFecha(d) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function rangoRapido(tipo) {
+      const hoy = new Date();
+      let desde = new Date();
+      if (tipo === 'hoy') {
+        desde = new Date(hoy);
+      } else if (tipo === 'semana') {
+        desde.setDate(hoy.getDate() - 6);
+      } else if (tipo === 'mes') {
+        desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+      }
+      document.getElementById('fDesde').value = fmtFecha(desde);
+      document.getElementById('fHasta').value = fmtFecha(hoy);
+      cargarReporte();
+    }
+
+    async function cargarReporte() {
+      const desde = document.getElementById('fDesde').value;
+      const hasta = document.getElementById('fHasta').value;
+      document.getElementById('rangoActual').innerText = desde && hasta ? `Mostrando resultados desde ${desde} hasta ${hasta}` : 'Mostrando todos los registros disponibles';
+
+      document.getElementById('resumenStats').innerHTML = '<div class="stat-card"><div class="valor">…</div><div class="label">Cargando</div></div>';
+      document.getElementById('listaTop').innerHTML = '<tr><td colspan="3" class="cargando">Cargando...</td></tr>';
+      document.getElementById('listaStockBajo').innerHTML = '<tr><td colspan="4" class="cargando">Cargando...</td></tr>';
+      document.getElementById('listaFacturas').innerHTML = '<tr><td colspan="6" class="cargando">Cargando...</td></tr>';
+
+      try {
+        const reporte = await api('getReporteVentas', { desde, hasta }, 'GET');
+        renderResumen(reporte);
+        renderTop(reporte.topProductos || []);
+        renderStockBajo(reporte.stockBajo || []);
+        renderFacturas(reporte.facturas || []);
+      } catch (e) {
+        document.getElementById('resumenStats').innerHTML = `<div class="stat-card"><div class="valor">-</div><div class="label">Error: ${e.message}</div></div>`;
+      }
+    }
+
+    function renderResumen(r) {
+      const promedio = r.totalFacturas > 0 ? r.totalVentas / r.totalFacturas : 0;
+      document.getElementById('resumenStats').innerHTML = `
+        <div class="stat-card"><div class="valor">$${Number(r.totalVentas).toLocaleString('es-CO')}</div><div class="label">Total vendido</div></div>
+        <div class="stat-card"><div class="valor">${r.totalFacturas}</div><div class="label">Facturas pagadas</div></div>
+        <div class="stat-card"><div class="valor">$${Math.round(promedio).toLocaleString('es-CO')}</div><div class="label">Ticket promedio</div></div>
+        <div class="stat-card"><div class="valor">${(r.stockBajo || []).length}</div><div class="label">Productos con stock bajo</div></div>
+      `;
+    }
+
+    function renderTop(top) {
+      const b = document.getElementById('listaTop');
+      if (top.length === 0) {
+        b.innerHTML = '<tr><td colspan="3" class="cargando">No hay ventas en este periodo.</td></tr>';
+        return;
+      }
+      b.innerHTML = top.map(p => `
+        <tr>
+          <td>${p.producto}</td>
+          <td>${p.cantidad}</td>
+          <td>$${Number(p.total).toLocaleString('es-CO')}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderStockBajo(items) {
+      const b = document.getElementById('listaStockBajo');
+      if (items.length === 0) {
+        b.innerHTML = '<tr><td colspan="4" class="cargando">Todo el inventario está en buen nivel. 🎉</td></tr>';
+        return;
+      }
+      b.innerHTML = items.map(p => `
+        <tr>
+          <td>${p.nombre}</td>
+          <td>${p.categoria || '-'}</td>
+          <td><span class="badge badge-bajo">${p.stock}</span></td>
+          <td>${p.stockMinimo}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderFacturas(facturas) {
+      const b = document.getElementById('listaFacturas');
+      if (facturas.length === 0) {
+        b.innerHTML = '<tr><td colspan="6" class="cargando">No hay facturas en este periodo.</td></tr>';
+        return;
+      }
+      b.innerHTML = facturas.slice().reverse().map(f => {
+        const pagada = f.estado === 'Pagada';
+        return `<tr>
+          <td>${f.fecha}</td>
+          <td>${f.numero}</td>
+          <td>${f.cliente || 'Consumidor final'}</td>
+          <td>${f.formaPago || '-'}</td>
+          <td>$${Number(f.total).toLocaleString('es-CO')}</td>
+          <td><span class="badge ${pagada ? 'badge-pagada' : 'badge-anulada'}">${f.estado}</span></td>
+        </tr>`;
+      }).join('');
+    }
+
+    window.onload = async () => {
+      const sesion = await requerirSesion();
+      if (!sesion) return;
+      await cargarConfig();
+      rangoRapido('mes');
+    };
+  </script>
+</body>
+</html>
