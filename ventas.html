@@ -109,6 +109,10 @@
       <div>
         <div class="panel">
           <h2>Agregar productos</h2>
+          <div id="avisoInventario" class="mensaje error oculto" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <span></span>
+            <button class="btn-secundario" onclick="cargarDatosBase()" style="white-space:nowrap;">Reintentar</button>
+          </div>
           <input type="text" id="buscarProducto" placeholder="Buscar por nombre o código..." oninput="buscarProductos()">
           <div class="resultado-buscar oculto" id="resultadosProductos"></div>
 
@@ -245,9 +249,25 @@
     }
 
     async function cargarDatosBase() {
+      const avisoBox = document.getElementById('avisoInventario');
+      avisoBox.classList.add('oculto');
+
+      // Se cargan por separado a propósito: si getClientes falla, no debe tumbar el inventario (y viceversa)
       try {
-        [PRODUCTOS, CLIENTES] = await Promise.all([api('getInventario', {}, 'GET'), api('getClientes', {}, 'GET')]);
-      } catch (e) { console.error(e); }
+        PRODUCTOS = await api('getInventario', {}, 'GET');
+      } catch (e) {
+        console.error('Error cargando inventario:', e);
+        PRODUCTOS = [];
+        avisoBox.querySelector('span').innerText = 'No se pudo cargar el inventario: ' + e.message;
+        avisoBox.classList.remove('oculto');
+      }
+
+      try {
+        CLIENTES = await api('getClientes', {}, 'GET');
+      } catch (e) {
+        console.error('Error cargando clientes:', e);
+        CLIENTES = [];
+      }
     }
 
     // ---------- BUSCAR PRODUCTOS ----------
