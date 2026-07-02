@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Separados · SOSIBÉ Boutique</title>
+  <style>
+    :root {
+      --rosa: #f7a8c4; --rosa-oscuro: #e0729e; --dorado: #c99a3c; --blanco: #ffffff;
+      --gris: #8a8a8a; --fondo: #fff5f8;
+    }
+    * { box-sizing: border-box; }
+    .oculto { display: none !important; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: var(--fondo); color: #333; }
+    .contenedor { max-width: 1100px; width: 95%; margin: 20px auto; }
+
+    .topbar {
+      background: white; padding: 15px 20px; border-radius: 15px;
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); flex-wrap: wrap; gap: 10px;
+    }
+    .marca strong { color: var(--rosa-oscuro); }
+    .btn-salir { background: none; border: 1px solid #e05555; color: #e05555; cursor: pointer; padding: 8px 14px; border-radius: 8px; font-weight: 600; }
+
+    nav.tabs { display: flex; gap: 8px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 4px; }
+    nav.tabs a {
+      flex: none; text-decoration: none; color: var(--rosa-oscuro); background: white;
+      padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 2px solid transparent;
+    }
+    nav.tabs a.activo { border-color: var(--rosa-oscuro); background: var(--rosa); color: white; }
+
+    .layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 20px; align-items: start; }
+    @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+
+    .panel { background: white; border-radius: 15px; padding: 18px 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+    .panel h2 { font-size: 15px; color: var(--rosa-oscuro); margin: 0 0 14px; }
+
+    input, select, textarea {
+      width: 100%; padding: 10px; border: 1.5px solid #f0d5e0; border-radius: 8px; outline: none; font-size: 13px; font-family: inherit; box-sizing: border-box;
+    }
+    input:focus, select:focus, textarea:focus { border-color: var(--rosa-oscuro); }
+    label { display: block; font-size: 11px; color: var(--gris); margin: 10px 0 4px; font-weight: 600; text-transform: uppercase; }
+
+    .resultado-buscar { max-height: 220px; overflow-y: auto; border: 1px solid #f2e6ec; border-radius: 8px; margin-top: 6px; }
+    .resultado-item { padding: 9px 12px; font-size: 13px; cursor: pointer; display: flex; justify-content: space-between; border-bottom: 1px solid #f7ebf1; }
+    .resultado-item:hover { background: #fdf1f5; }
+    .resultado-item:last-child { border-bottom: none; }
+    .resultado-item .stock-tag { color: var(--gris); font-size: 11px; }
+
+    table.carrito { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    table.carrito th, table.carrito td { padding: 8px 6px; font-size: 12.5px; border-bottom: 1px solid #f2e6ec; text-align: left; }
+    table.carrito th { color: var(--rosa-oscuro); font-size: 10.5px; text-transform: uppercase; }
+    table.carrito input[type="number"] { width: 60px; padding: 5px; }
+    .btn-quitar { border: none; background: none; color: #c0447a; cursor: pointer; font-size: 15px; }
+    .vacio-carrito { text-align: center; padding: 20px; color: var(--gris); font-size: 13px; }
+
+    .totales-fila { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; }
+    .totales-fila.total { font-size: 16px; font-weight: 700; color: var(--rosa-oscuro); border-top: 1.5px solid #f2e6ec; margin-top: 8px; padding-top: 10px; }
+    .totales-fila.saldo { font-weight: 700; color: #c0447a; }
+
+    .btn-principal { padding: 12px; background: linear-gradient(135deg, var(--rosa), var(--rosa-oscuro)); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 14px; width: 100%; margin-top: 14px; }
+    .btn-principal:hover { opacity: 0.9; }
+    .btn-principal:disabled { opacity: 0.6; cursor: not-allowed; }
+    .btn-secundario { padding: 9px 14px; background: white; border: 1.5px solid #f0d5e0; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 12px; color: var(--rosa-oscuro); }
+    .btn-wa { padding: 9px 14px; background: #e9fbf0; border: 1.5px solid #b6ecc9; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 12px; color: #1f8a4c; }
+
+    .mensaje { font-size: 13px; padding: 10px; border-radius: 8px; margin-bottom: 12px; display: none; }
+    .error { background: #fde5ec; color: #c0447a; display: block; }
+    .ok { background: #e6f7ea; color: #2a8a4a; display: block; }
+
+    table.historial { width: 100%; border-collapse: collapse; }
+    table.historial th, table.historial td { padding: 10px; font-size: 12.5px; border-bottom: 1px solid #f2e6ec; text-align: left; }
+    table.historial th { color: var(--rosa-oscuro); font-size: 10.5px; text-transform: uppercase; }
+    .badge { padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .badge-activo { background: #fff3e0; color: #b3720a; }
+    .badge-pagado { background: #e6f7ea; color: #2a8a4a; }
+    .badge-entregado { background: #e6eefc; color: #2a5ca8; }
+    .badge-cancelado { background: #eee; color: #888; }
+    .badge-vencido { background: #fde5ec; color: #c0447a; }
+    .cargando { text-align: center; padding: 20px; color: var(--gris); font-size: 13px; }
+    .acciones-fila { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
+    .overlay.activo { display: flex; }
+    .modal { background: white; border-radius: 18px; padding: 24px; max-width: 480px; width: 100%; max-height: 90vh; overflow-y: auto; }
+    .modal h2 { margin: 0 0 16px; color: var(--rosa-oscuro); font-size: 17px; }
+  </style>
+</head>
+<body>
+
+  <div class="contenedor">
+    <div class="topbar">
+      <div class="marca"><strong id="appTienda">SOSIBÉ Boutique</strong> · <span id="appUser"></span></div>
+      <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
+    </div>
+
+    <nav class="tabs">
+      <a href="dashboard.html">🏠 Panel</a>
+      <a href="inventario.html">📦 Inventario</a>
+      <a href="ventas.html">🧾 Ventas</a>
+      <a href="separados.html" class="activo">🎀 Separados</a>
+      <a href="clientes.html">👥 Clientes</a>
+      <a href="compras.html">🛒 Compras</a>
+      <a href="proveedores.html">🚚 Proveedores</a>
+      <a href="caja.html">💰 Caja</a>
+      <a href="reportes.html">📊 Reportes</a>
+    </nav>
+
+    <div class="layout">
+      <!-- COLUMNA IZQUIERDA: BUSCAR + CARRITO + HISTORIAL -->
+      <div>
+        <div class="panel">
+          <h2>Agregar productos al separado</h2>
+          <div id="avisoInventario" class="mensaje error oculto" style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+            <span></span>
+            <button class="btn-secundario" onclick="cargarDatosBase()" style="white-space:nowrap;">Reintentar</button>
+          </div>
+          <input type="text" id="buscarProducto" placeholder="Buscar por nombre o código..." oninput="buscarProductos()">
+          <div class="resultado-buscar oculto" id="resultadosProductos"></div>
+
+          <table class="carrito">
+            <thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Total</th><th></th></tr></thead>
+            <tbody id="carritoBody"><tr><td colspan="5" class="vacio-carrito">Aún no has agregado prendas. Busca un producto arriba.</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h2>Separados activos</h2>
+          <div style="overflow-x:auto;">
+            <table class="historial">
+              <thead><tr><th>N°</th><th>Cliente</th><th>Límite</th><th>Total</th><th>Saldo</th><th>Estado</th><th></th></tr></thead>
+              <tbody id="historialBody"><tr><td colspan="7" class="cargando">Cargando separados...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMNA DERECHA: CLIENTE + ABONO + TOTALES -->
+      <div class="panel">
+        <h2>Datos del separado</h2>
+        <div id="sepMsg" class="mensaje"></div>
+
+        <label>Cliente (obligatorio)</label>
+        <input type="text" id="buscarCliente" placeholder="Buscar cliente por nombre o documento..." oninput="buscarClientes()">
+        <div class="resultado-buscar oculto" id="resultadosClientes"></div>
+        <div id="clienteSeleccionado" style="font-size:12.5px; color:var(--gris); margin-top:6px;">Ningún cliente seleccionado</div>
+
+        <label>Fecha límite para recoger / pagar</label>
+        <input type="date" id="fechaLimite">
+
+        <label>Abono inicial</label>
+        <input type="number" id="abonoInicial" min="0" value="0" oninput="actualizarTotales()">
+
+        <label>Forma de pago del abono</label>
+        <select id="formaPago">
+          <option value="Efectivo">Efectivo</option>
+          <option value="Tarjeta">Tarjeta</option>
+          <option value="Transferencia">Transferencia</option>
+          <option value="Otro">Otro</option>
+        </select>
+
+        <label>Observaciones</label>
+        <textarea id="observacionesSep" rows="2"></textarea>
+
+        <div style="margin-top:14px;">
+          <div class="totales-fila total"><span>Total prendas</span><span id="totTotal">$0</span></div>
+          <div class="totales-fila"><span>Abono inicial</span><span id="totAbono">-$0</span></div>
+          <div class="totales-fila saldo"><span>Saldo pendiente</span><span id="totSaldo">$0</span></div>
+        </div>
+
+        <button class="btn-principal" id="btnRegistrar" onclick="registrarSeparado()">Registrar separado</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DETALLE / ABONOS -->
+  <div class="overlay" id="overlayDetalle">
+    <div class="modal">
+      <h2 id="detalleTitulo">Separado</h2>
+      <div id="detalleContenido"></div>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px; flex-wrap: wrap;">
+        <button class="btn-secundario" onclick="cerrarDetalle()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL REGISTRAR ABONO -->
+  <div class="overlay" id="overlayAbono">
+    <div class="modal">
+      <h2>Registrar abono</h2>
+      <div id="abonoMsg" class="mensaje"></div>
+      <p style="font-size:13px; color:var(--gris); margin-top:0;">Saldo pendiente actual: <strong id="saldoActualTxt">$0</strong></p>
+      <label>Valor del abono</label>
+      <input type="number" id="valorAbono" min="1">
+      <label>Forma de pago</label>
+      <select id="formaPagoAbono">
+        <option value="Efectivo">Efectivo</option>
+        <option value="Tarjeta">Tarjeta</option>
+        <option value="Transferencia">Transferencia</option>
+        <option value="Otro">Otro</option>
+      </select>
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:16px;">
+        <button class="btn-secundario" onclick="cerrarAbono()">Cancelar</button>
+        <button class="btn-principal" style="width:auto; margin-top:0;" onclick="confirmarAbono()">Guardar abono</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://script.google.com/macros/s/AKfycbwF0T4dFM_SbfCxq6dBBSdQBL_xP2R64RZFJW-ly0AGiEWuRvVrIHXV7AQ2WrchaT_W/exec';
+    let TOKEN = null;
+    let PRODUCTOS = [];
+    let CLIENTES = [];
+    let CARRITO = [];
+    let CLIENTE_SELECCIONADO = null;
+    let CONFIG = { moneda: '$', nombreEmpresa: 'SOSIBÉ Boutique' };
+    let SEPARADOS = [];
+    let ID_ABONO_ACTUAL = null;
+
+    async function api(accion, params = {}, metodo = 'POST') {
+      const url = metodo === 'GET' ? `${API_URL}?action=${accion}&${new URLSearchParams(params)}` : API_URL;
+      const config = {
+        method: metodo,
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: metodo === 'GET' ? undefined : JSON.stringify({ action: accion, ...params })
+      };
+      const res = await fetch(url, config);
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error);
+      return json.data;
+    }
+
+    function cerrarSesion() {
+      if (TOKEN) api('logoutSesion', { token: TOKEN }).catch(() => {});
+      localStorage.removeItem('pos_token');
+      window.location.href = 'index.html';
+    }
+
+    async function requerirSesion() {
+      TOKEN = localStorage.getItem('pos_token');
+      if (!TOKEN) { window.location.href = 'index.html'; return null; }
+      try {
+        const sesion = await api('validarSesion', { token: TOKEN }, 'GET');
+        document.getElementById('appUser').innerText = `${sesion.nombre} (${sesion.rol})`;
+        return sesion;
+      } catch (e) {
+        localStorage.removeItem('pos_token');
+        window.location.href = 'index.html';
+        return null;
+      }
+    }
+
+    async function cargarConfig() {
+      try {
+        CONFIG = await api('getConfigPublica', {}, 'GET');
+        document.getElementById('appTienda').innerText = CONFIG.nombreEmpresa || 'SOSIBÉ Boutique';
+      } catch (e) { console.error(e); }
+    }
+
+    async function cargarDatosBase() {
+      const avisoBox = document.getElementById('avisoInventario');
+      avisoBox.classList.add('oculto');
+      try {
+        PRODUCTOS = await api('getInventario', {}, 'GET');
+      } catch (e) {
+        console.error('Error cargando inventario:', e);
+        PRODUCTOS = [];
+        avisoBox.querySelector('span').innerText = 'No se pudo cargar el inventario: ' + e.message;
+        avisoBox.classList.remove('oculto');
+      }
+      try {
+        CLIENTES = await api('getClientes', {}, 'GET');
+      } catch (e) {
+        console.error('Error cargando clientes:', e);
+        CLIENTES = [];
+      }
+    }
+
+    // ---------- BUSCAR PRODUCTOS ----------
+    function buscarProductos() {
+      const q = document.getElementById('buscarProducto').value.trim().toLowerCase();
+      const cont = document.getElementById('resultadosProductos');
+      if (!q) { cont.classList.add('oculto'); cont.innerHTML = ''; return; }
+
+      const resultados = PRODUCTOS.filter(p => {
+        if (p.estado === 'Inactivo' || Number(p.stock) <= 0) return false;
+        const texto = [p.nombre, p.codigo, p.categoria, p.talla, p.color].filter(Boolean).join(' ').toLowerCase();
+        return texto.includes(q);
+      }).slice(0, 8);
+
+      if (resultados.length === 0) {
+        cont.innerHTML = '<div class="resultado-item">Sin resultados con stock disponible</div>';
+      } else {
+        cont.innerHTML = resultados.map(p => `
+          <div class="resultado-item" onclick='agregarAlCarrito(${JSON.stringify(p)})'>
+            <span>${p.nombre} ${p.talla ? '· ' + p.talla : ''} ${p.color ? '· ' + p.color : ''}</span>
+            <span class="stock-tag">$${Number(p.precio).toLocaleString('es-CO')} · stock ${p.stock}</span>
+          </div>`).join('');
+      }
+      cont.classList.remove('oculto');
+    }
+
+    function agregarAlCarrito(p) {
+      document.getElementById('buscarProducto').value = '';
+      document.getElementById('resultadosProductos').classList.add('oculto');
+
+      const existente = CARRITO.find(it => it.codigo === p.codigo);
+      if (existente) {
+        if (existente.cantidad + 1 > Number(p.stock)) { alert('No hay suficiente stock'); return; }
+        existente.cantidad++;
+      } else {
+        CARRITO.push({ codigo: p.codigo, producto: p.nombre, talla: p.talla, color: p.color, cantidad: 1, precio: Number(p.precio), stockDisponible: Number(p.stock) });
+      }
+      renderCarrito();
+    }
+
+    function renderCarrito() {
+      const b = document.getElementById('carritoBody');
+      if (CARRITO.length === 0) {
+        b.innerHTML = '<tr><td colspan="5" class="vacio-carrito">Aún no has agregado prendas. Busca un producto arriba.</td></tr>';
+        actualizarTotales();
+        return;
+      }
+      b.innerHTML = CARRITO.map((it, i) => `
+        <tr>
+          <td>${it.producto}${it.talla ? ' · ' + it.talla : ''}${it.color ? ' · ' + it.color : ''}</td>
+          <td><input type="number" min="1" max="${it.stockDisponible}" value="${it.cantidad}" onchange="cambiarCantidad(${i}, this.value)"></td>
+          <td>$${it.precio.toLocaleString('es-CO')}</td>
+          <td>$${(it.precio * it.cantidad).toLocaleString('es-CO')}</td>
+          <td><button class="btn-quitar" onclick="quitarDelCarrito(${i})">✕</button></td>
+        </tr>`).join('');
+      actualizarTotales();
+    }
+
+    function cambiarCantidad(i, valor) {
+      const cant = Number(valor);
+      if (cant <= 0) { quitarDelCarrito(i); return; }
+      if (cant > CARRITO[i].stockDisponible) { alert('No hay suficiente stock, máximo ' + CARRITO[i].stockDisponible); renderCarrito(); return; }
+      CARRITO[i].cantidad = cant;
+      renderCarrito();
+    }
+
+    function quitarDelCarrito(i) {
+      CARRITO.splice(i, 1);
+      renderCarrito();
+    }
+
+    // ---------- BUSCAR CLIENTES ----------
+    function buscarClientes() {
+      const q = document.getElementById('buscarCliente').value.trim().toLowerCase();
+      const cont = document.getElementById('resultadosClientes');
+      if (!q) { cont.classList.add('oculto'); cont.innerHTML = ''; return; }
+
+      const resultados = CLIENTES.filter(c => c.estado !== 'Inactivo' &&
+        (`${c.nombre} ${c.apellido} ${c.documento}`.toLowerCase().includes(q))).slice(0, 8);
+
+      cont.innerHTML = resultados.length === 0
+        ? '<div class="resultado-item">Sin resultados. Puedes registrarlo en el módulo Clientes.</div>'
+        : resultados.map(c => `<div class="resultado-item" onclick='seleccionarCliente(${JSON.stringify(c)})'>
+            <span>${c.nombre} ${c.apellido || ''}</span><span class="stock-tag">${c.documento || ''}</span></div>`).join('');
+      cont.classList.remove('oculto');
+    }
+
+    function seleccionarCliente(c) {
+      CLIENTE_SELECCIONADO = c;
+      document.getElementById('buscarCliente').value = '';
+      document.getElementById('resultadosClientes').classList.add('oculto');
+      document.getElementById('clienteSeleccionado').innerHTML = `Cliente: <strong>${c.nombre} ${c.apellido || ''}</strong>${c.telefono ? ' · ' + c.telefono : ' · <span style="color:#c0447a;">sin teléfono</span>'} <a href="#" onclick="quitarCliente(event)" style="color:var(--rosa-oscuro);">(quitar)</a>`;
+    }
+
+    function quitarCliente(e) {
+      e.preventDefault();
+      CLIENTE_SELECCIONADO = null;
+      document.getElementById('clienteSeleccionado').innerHTML = 'Ningún cliente seleccionado';
+    }
+
+    // ---------- TOTALES ----------
+    function calcularTotales() {
+      const total = CARRITO.reduce((s, it) => s + it.precio * it.cantidad, 0);
+      const abono = Number(document.getElementById('abonoInicial').value) || 0;
+      const saldo = Math.max(Math.round((total - abono) * 100) / 100, 0);
+      return { total, abono, saldo };
+    }
+
+    function actualizarTotales() {
+      const { total, abono, saldo } = calcularTotales();
+      const m = CONFIG.moneda || '$';
+      document.getElementById('totTotal').innerText = m + total.toLocaleString('es-CO');
+      document.getElementById('totAbono').innerText = '-' + m + abono.toLocaleString('es-CO');
+      document.getElementById('totSaldo').innerText = m + saldo.toLocaleString('es-CO');
+    }
+
+    // ---------- REGISTRAR SEPARADO ----------
+    async function registrarSeparado() {
+      const msg = document.getElementById('sepMsg');
+      msg.style.display = 'none';
+
+      if (CARRITO.length === 0) { msg.innerText = 'Agrega al menos una prenda al separado'; msg.className = 'mensaje error'; return; }
+      if (!CLIENTE_SELECCIONADO) { msg.innerText = 'Selecciona el cliente que aparta las prendas'; msg.className = 'mensaje error'; return; }
+
+      const { total, abono } = calcularTotales();
+      if (abono > total) { msg.innerText = 'El abono no puede ser mayor al total'; msg.className = 'mensaje error'; return; }
+
+      const separado = {
+        cliente: { id: CLIENTE_SELECCIONADO.id, nombre: `${CLIENTE_SELECCIONADO.nombre} ${CLIENTE_SELECCIONADO.apellido || ''}`.trim(), documento: CLIENTE_SELECCIONADO.documento, telefono: CLIENTE_SELECCIONADO.telefono },
+        fechaLimite: document.getElementById('fechaLimite').value,
+        abonoInicial: abono,
+        formaPago: document.getElementById('formaPago').value,
+        observaciones: document.getElementById('observacionesSep').value.trim(),
+        items: CARRITO.map(it => ({ codigo: it.codigo, producto: it.producto, talla: it.talla, color: it.color, cantidad: it.cantidad, precio: it.precio }))
+      };
+
+      const btn = document.getElementById('btnRegistrar');
+      btn.disabled = true; btn.innerText = 'Registrando...';
+      try {
+        const res = await api('crearSeparado', { token: TOKEN, separado });
+        msg.innerText = `Separado ${res.numero} registrado. Saldo pendiente: $${Number(res.saldo).toLocaleString('es-CO')}`;
+        msg.className = 'mensaje ok';
+
+        CARRITO = [];
+        CLIENTE_SELECCIONADO = null;
+        document.getElementById('clienteSeleccionado').innerHTML = 'Ningún cliente seleccionado';
+        document.getElementById('fechaLimite').value = '';
+        document.getElementById('abonoInicial').value = 0;
+        document.getElementById('observacionesSep').value = '';
+        renderCarrito();
+        await Promise.all([cargarDatosBase(), cargarHistorial()]);
+      } catch (e) {
+        msg.innerText = e.message;
+        msg.className = 'mensaje error';
+      } finally {
+        btn.disabled = false; btn.innerText = 'Registrar separado';
+      }
+    }
+
+    // ---------- HISTORIAL ----------
+    function badgeEstado(sep) {
+      if (sep.estado === 'Cancelado') return '<span class="badge badge-cancelado">Cancelado</span>';
+      if (sep.estado === 'Entregado') return '<span class="badge badge-entregado">Entregado</span>';
+      if (sep.estado === 'Pagado') return '<span class="badge badge-pagado">Pagado</span>';
+      const hoy = new Date().toISOString().slice(0, 10);
+      if (sep.fechaLimite && sep.fechaLimite < hoy) return '<span class="badge badge-vencido">Vencido</span>';
+      return '<span class="badge badge-activo">Activo</span>';
+    }
+
+    async function cargarHistorial() {
+      const b = document.getElementById('historialBody');
+      try {
+        SEPARADOS = await api('getSeparados', {}, 'GET');
+        const activos = SEPARADOS.filter(s => s.estado !== 'Entregado').slice().reverse();
+        if (activos.length === 0) { b.innerHTML = '<tr><td colspan="7" class="cargando">Aún no hay separados registrados.</td></tr>'; return; }
+        b.innerHTML = activos.map(s => `
+          <tr>
+            <td>${s.numero}</td>
+            <td>${s.cliente}</td>
+            <td>${s.fechaLimite || '-'}</td>
+            <td>$${Number(s.total).toLocaleString('es-CO')}</td>
+            <td>$${Number(s.saldo).toLocaleString('es-CO')}</td>
+            <td>${badgeEstado(s)}</td>
+            <td>
+              <div class="acciones-fila">
+                <button class="btn-secundario" onclick="verDetalle(${s.id})">Ver</button>
+                ${s.estado === 'Activo' ? `<button class="btn-secundario" onclick="abrirAbono(${s.id})">Abonar</button>` : ''}
+                ${s.estado !== 'Cancelado' && s.telefono ? `<button class="btn-wa" onclick="enviarRecordatorioWA(${s.id})">📲 Recordar</button>` : ''}
+                ${s.estado === 'Pagado' ? `<button class="btn-secundario" onclick="marcarEntregado(${s.id})">Entregar</button>` : ''}
+                ${s.estado === 'Activo' ? `<button class="btn-secundario" onclick="cancelarSep(${s.id}, '${s.numero}')">Cancelar</button>` : ''}
+              </div>
+            </td>
+          </tr>`).join('');
+      } catch (e) {
+        b.innerHTML = `<tr><td colspan="7" class="cargando">Error: ${e.message}</td></tr>`;
+      }
+    }
+
+    async function verDetalle(idSeparado) {
+      const s = SEPARADOS.find(x => x.id === idSeparado) || {};
+      document.getElementById('detalleTitulo').innerText = 'Separado ' + (s.numero || '');
+      document.getElementById('detalleContenido').innerHTML = '<p class="cargando">Cargando...</p>';
+      document.getElementById('overlayDetalle').classList.add('activo');
+      try {
+        const [items, abonos] = await Promise.all([
+          api('getDetalleSeparado', { idSeparado }, 'GET'),
+          api('getAbonosSeparado', { idSeparado }, 'GET')
+        ]);
+        const m = CONFIG.moneda || '$';
+        document.getElementById('detalleContenido').innerHTML = `
+          <p style="font-size:13px; color:var(--gris); margin-top:0;">
+            Cliente: <strong>${s.cliente}</strong>${s.telefono ? ' · ' + s.telefono : ''}<br>
+            Fecha límite: <strong>${s.fechaLimite || '-'}</strong> · Estado: ${badgeEstado(s)}
+          </p>
+          <h2 style="font-size:13px;">Prendas apartadas</h2>
+          <table class="historial">
+            <thead><tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Total</th></tr></thead>
+            <tbody>${items.map(it => `<tr><td>${it.producto}${it.talla ? ' · ' + it.talla : ''}</td><td>${it.cantidad}</td><td>${m}${Number(it.precio).toLocaleString('es-CO')}</td><td>${m}${Number(it.total).toLocaleString('es-CO')}</td></tr>`).join('')}</tbody>
+          </table>
+          <h2 style="font-size:13px; margin-top:16px;">Historial de abonos</h2>
+          ${abonos.length === 0 ? '<p style="font-size:12.5px; color:var(--gris);">Aún no se han registrado abonos.</p>' : `
+          <table class="historial">
+            <thead><tr><th>Fecha</th><th>Valor</th><th>Forma pago</th><th>Usuario</th></tr></thead>
+            <tbody>${abonos.map(a => `<tr><td>${a.fecha}</td><td>${m}${Number(a.valor).toLocaleString('es-CO')}</td><td>${a.formaPago}</td><td>${a.usuario}</td></tr>`).join('')}</tbody>
+          </table>`}
+          <div class="totales-fila total" style="margin-top:12px;"><span>Total</span><span>${m}${Number(s.total).toLocaleString('es-CO')}</span></div>
+          <div class="totales-fila saldo"><span>Saldo pendiente</span><span>${m}${Number(s.saldo).toLocaleString('es-CO')}</span></div>
+        `;
+      } catch (e) {
+        document.getElementById('detalleContenido').innerHTML = `<p class="mensaje error">${e.message}</p>`;
+      }
+    }
+
+    function cerrarDetalle() {
+      document.getElementById('overlayDetalle').classList.remove('activo');
+    }
+
+    // ---------- ABONOS ----------
+    function abrirAbono(idSeparado) {
+      const s = SEPARADOS.find(x => x.id === idSeparado);
+      if (!s) return;
+      ID_ABONO_ACTUAL = idSeparado;
+      document.getElementById('abonoMsg').style.display = 'none';
+      document.getElementById('saldoActualTxt').innerText = (CONFIG.moneda || '$') + Number(s.saldo).toLocaleString('es-CO');
+      document.getElementById('valorAbono').value = '';
+      document.getElementById('valorAbono').max = s.saldo;
+      document.getElementById('overlayAbono').classList.add('activo');
+    }
+
+    function cerrarAbono() {
+      document.getElementById('overlayAbono').classList.remove('activo');
+      ID_ABONO_ACTUAL = null;
+    }
+
+    async function confirmarAbono() {
+      const msg = document.getElementById('abonoMsg');
+      const valor = Number(document.getElementById('valorAbono').value);
+      const formaPago = document.getElementById('formaPagoAbono').value;
+      if (!valor || valor <= 0) { msg.innerText = 'Ingresa un valor válido'; msg.className = 'mensaje error'; return; }
+      try {
+        await api('registrarAbono', { token: TOKEN, idSeparado: ID_ABONO_ACTUAL, valor, formaPago });
+        cerrarAbono();
+        await cargarHistorial();
+      } catch (e) {
+        msg.innerText = e.message;
+        msg.className = 'mensaje error';
+      }
+    }
+
+    // ---------- CANCELAR / ENTREGAR ----------
+    async function cancelarSep(idSeparado, numero) {
+      if (!confirm(`¿Cancelar el separado ${numero}? Las prendas volverán al inventario disponible.`)) return;
+      try {
+        await api('cancelarSeparado', { token: TOKEN, idSeparado });
+        await Promise.all([cargarDatosBase(), cargarHistorial()]);
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function marcarEntregado(idSeparado) {
+      if (!confirm('¿Marcar este separado como entregado al cliente?')) return;
+      try {
+        await api('entregarSeparado', { token: TOKEN, idSeparado });
+        await cargarHistorial();
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    // ---------- RECORDATORIO POR WHATSAPP ----------
+    function telefonoWA(tel) {
+      if (!tel) return '';
+      let limpio = String(tel).replace(/\D/g, '');
+      if (limpio.length === 10) limpio = '57' + limpio; // prefijo Colombia
+      return limpio;
+    }
+
+    function enviarRecordatorioWA(idSeparado) {
+      const s = SEPARADOS.find(x => x.id === idSeparado);
+      if (!s) return;
+      if (!s.telefono) { alert('Este cliente no tiene teléfono registrado. Agrégalo desde el módulo Clientes.'); return; }
+
+      const m = CONFIG.moneda || '$';
+      const nombreEmpresa = CONFIG.nombreEmpresa || 'SOSIBÉ Boutique';
+      const hora = new Date().getHours();
+      const saludo = hora < 12 ? '¡Buenos días!' : hora < 18 ? '¡Buenas tardes!' : '¡Buenas noches!';
+
+      let texto = `${saludo} ${s.cliente.split(' ')[0] || ''} 💕\n\nTe recordamos tu separado en *${nombreEmpresa}*:\n\n🎀 N°: ${s.numero}\n💰 Saldo pendiente: ${m}${Number(s.saldo).toLocaleString('es-CO')}`;
+      if (s.fechaLimite) texto += `\n📅 Fecha límite: ${s.fechaLimite}`;
+      texto += `\n\n¡Te esperamos para completar tu pago y llevarte tus prendas! 🛍️`;
+
+      const numeroDestino = telefonoWA(s.telefono);
+      const url = `https://wa.me/${numeroDestino}?text=${encodeURIComponent(texto)}`;
+      window.open(url, '_blank');
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#buscarProducto') && !e.target.closest('#resultadosProductos')) document.getElementById('resultadosProductos').classList.add('oculto');
+      if (!e.target.closest('#buscarCliente') && !e.target.closest('#resultadosClientes')) document.getElementById('resultadosClientes').classList.add('oculto');
+    });
+
+    window.onload = async () => {
+      const sesion = await requerirSesion();
+      if (!sesion) return;
+      await cargarConfig();
+      await cargarDatosBase();
+      await cargarHistorial();
+    };
+  </script>
+</body>
+</html>
