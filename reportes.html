@@ -169,7 +169,14 @@
       window.location.href = 'index.html';
     }
 
-    async function requerirSesion() {
+    // Solo se considera "sesión vencida" cuando el backend lo dice explícitamente.
+    // Cualquier otro error (red, timeout de Apps Script, límite de ejecuciones
+    // concurrentes, etc.) es transitorio: NO debe sacar al usuario del sistema.
+    function esSesionExpirada_(e) {
+      return /expirada|token requerido/i.test((e && e.message) || '');
+    }
+
+    async function requerirSesion(intento = 0) {
       const token = getToken();
       if (!token) { window.location.href = 'index.html'; return null; }
       try {
@@ -177,10 +184,19 @@
         document.getElementById('appUser').innerText = `${sesion.nombre} (${sesion.rol})`;
         return sesion;
       } catch (e) {
-        localStorage.removeItem('pos_token');
-        localStorage.removeItem('pos_usuario');
-        window.location.href = 'index.html';
-        return null;
+        if (esSesionExpirada_(e)) {
+          localStorage.removeItem('pos_token');
+          localStorage.removeItem('pos_usuario');
+          window.location.href = 'index.html';
+          return null;
+        }
+        console.warn('Error temporal validando sesión, reintentando...', e);
+        if (intento >= 8) {
+          console.error('No se pudo validar la sesión tras varios intentos. Se mantiene la sesión activa; recarga la página si el problema persiste.');
+          return null;
+        }
+        await new Promise(r => setTimeout(r, 1500));
+        return requerirSesion(intento + 1);
       }
     }
 
