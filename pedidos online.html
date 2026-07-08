@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pedidos Online · Sosibé Boutique</title>
+  <style>
+    :root {
+      --rosa: #f7a8c4;
+      --rosa-oscuro: #e0729e;
+      --rosa-suave: #fce4ee;
+      --dorado: #c99a3c;
+      --blanco: #ffffff;
+      --gris: #8a8a8a;
+      --gris-oscuro: #4a4a4a;
+      --fondo: #fff5f8;
+      --sombra: 0 6px 20px rgba(224, 114, 158, 0.08);
+      --sombra-hover: 0 12px 28px rgba(224, 114, 158, 0.16);
+      --radio: 18px;
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+      margin: 0; background: var(--fondo); color: #333;
+      -webkit-font-smoothing: antialiased;
+    }
+    .contenedor { max-width: 1440px; width: 94%; margin: 24px auto; }
+
+    /* ---------- TOPBAR ---------- */
+    .topbar {
+      background: var(--blanco);
+      padding: clamp(14px, 2vw, 22px) clamp(18px, 3vw, 30px);
+      border-radius: var(--radio);
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 22px; box-shadow: var(--sombra); flex-wrap: wrap; gap: 14px;
+      border: 1px solid rgba(224, 114, 158, 0.08);
+    }
+    .marca { display: flex; align-items: center; gap: 16px; min-width: 0; }
+    .marca img {
+      width: clamp(58px, 6vw, 96px);
+      height: clamp(58px, 6vw, 96px);
+      border-radius: 50%;
+      object-fit: cover;
+      flex-shrink: 0;
+      box-shadow: 0 3px 10px rgba(224, 114, 158, 0.25);
+      border: 2px solid var(--rosa-suave);
+    }
+    .marca-texto { min-width: 0; display: flex; flex-direction: column; }
+    .marca strong {
+      color: var(--rosa-oscuro);
+      font-size: clamp(16px, 2.1vw, 24px);
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .marca .subtitulo {
+      color: var(--gris);
+      font-size: clamp(11px, 1.1vw, 13px);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .btn-salir {
+      background: none; border: 1.5px solid #e05555; color: #e05555; cursor: pointer;
+      padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 13px;
+      transition: 0.15s; white-space: nowrap; flex-shrink: 0;
+    }
+    .btn-salir:hover { background: #e05555; color: white; }
+
+    /* ---------- NAV ---------- */
+    nav.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+    nav.tabs a {
+      flex: 1 1 auto; min-width: 110px; text-align: center;
+      text-decoration: none; color: var(--rosa-oscuro); background: var(--blanco);
+      padding: 12px 14px; border-radius: 12px;
+      font-size: clamp(12px, 1.05vw, 14px); font-weight: 700;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.045); border: 2px solid transparent;
+      transition: 0.15s; white-space: nowrap;
+    }
+    nav.tabs a:hover { transform: translateY(-2px); box-shadow: var(--sombra-hover); }
+    nav.tabs a.activo { border-color: var(--rosa-oscuro); background: linear-gradient(135deg, var(--rosa), var(--rosa-oscuro)); color: white; }
+
+    h2.seccion {
+      font-size: clamp(14px, 1.3vw, 17px); color: var(--rosa-oscuro); margin: 0 0 14px;
+      font-weight: 800; display: flex; align-items: center; gap: 8px; justify-content: space-between; flex-wrap: wrap;
+    }
+
+    /* ---------- FILTROS ---------- */
+    .filtros { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+    .filtro-btn {
+      background: var(--blanco); border: 2px solid transparent; color: var(--gris-oscuro);
+      padding: 9px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: 0.15s;
+    }
+    .filtro-btn.activo { border-color: var(--rosa-oscuro); background: var(--rosa-suave); color: var(--rosa-oscuro); }
+    .buscador {
+      margin-left: auto; padding: 9px 14px; border-radius: 20px; border: 1px solid #eecdd9;
+      font-size: 13px; min-width: 200px;
+    }
+
+    /* ---------- TABLA / TARJETAS ---------- */
+    .tabla-wrap {
+      background: var(--blanco); border-radius: 16px; box-shadow: var(--sombra);
+      overflow-x: auto; overflow-y: hidden; margin-bottom: 24px;
+    }
+    table { width: 100%; border-collapse: collapse; min-width: 760px; }
+    th, td { padding: 14px 16px; text-align: left; border-bottom: 1px solid #f4e4ec; font-size: 13.5px; }
+    th { color: var(--rosa-oscuro); font-size: 11px; text-transform: uppercase; background: #fdf1f5; font-weight: 700; letter-spacing: 0.3px; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: #fffafc; }
+    .cargando { text-align: center; padding: 26px; color: var(--gris); font-size: 13px; }
+
+    .badge { padding: 4px 11px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .badge-pendiente { background: #fff3d6; color: #a3760b; }
+    .badge-confirmado { background: #e6f7ea; color: #2a8a4a; }
+    .badge-cancelado { background: #fde5e5; color: #c0392b; }
+
+    .btn-accion {
+      border: none; padding: 7px 13px; border-radius: 8px; font-size: 12px; font-weight: 700;
+      cursor: pointer; margin-right: 6px; margin-bottom: 4px; transition: 0.15s;
+    }
+    .btn-ver { background: var(--rosa-suave); color: var(--rosa-oscuro); }
+    .btn-ver:hover { background: var(--rosa); color: white; }
+    .btn-aprobar { background: #2a8a4a; color: white; }
+    .btn-aprobar:hover { background: #226e3b; }
+    .btn-rechazar { background: none; border: 1.5px solid #c0392b; color: #c0392b; }
+    .btn-rechazar:hover { background: #c0392b; color: white; }
+    .btn-accion:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .sin-comprobante { color: var(--gris); font-size: 12px; font-style: italic; }
+    .link-comprobante { color: var(--rosa-oscuro); font-weight: 700; text-decoration: none; font-size: 12.5px; }
+    .link-comprobante:hover { text-decoration: underline; }
+
+    /* ---------- MODAL ---------- */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(60,20,35,0.45); z-index: 40;
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal {
+      background: var(--blanco); border-radius: 18px; padding: 26px; max-width: 520px; width: 100%;
+      max-height: 88vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+    }
+    .modal h2 { color: var(--rosa-oscuro); margin-top: 0; font-size: 19px; }
+    .modal .cerrar { float: right; background: none; border: none; font-size: 22px; color: var(--gris); cursor: pointer; }
+    .info-linea { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px dashed #f4e4ec; font-size: 13.5px; }
+    .info-linea b { color: var(--gris-oscuro); }
+    .items-lista { margin: 14px 0; }
+    .item-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f9eef3; font-size: 13px; }
+    .comprobante-preview { text-align: center; margin: 14px 0; }
+    .comprobante-preview img { max-width: 100%; max-height: 260px; border-radius: 10px; box-shadow: var(--sombra); }
+    .total-final { font-size: 18px; font-weight: 800; color: var(--rosa-oscuro); text-align: right; margin: 12px 0; }
+    .modal-acciones { display: flex; gap: 10px; margin-top: 18px; }
+    .modal-acciones button { flex: 1; padding: 11px; border-radius: 10px; font-size: 14px; font-weight: 700; border: none; cursor: pointer; }
+    textarea.motivo { width: 100%; padding: 9px; border-radius: 8px; border: 1px solid #ddd; font-size: 13px; margin-top: 8px; }
+
+    @media (max-width: 600px) {
+      .contenedor { width: 100%; margin: 12px auto; padding: 0 10px; }
+      .topbar { border-radius: 14px; padding: 12px 14px; }
+      .marca img { width: 50px; height: 50px; }
+      .marca strong { font-size: 15px; }
+      nav.tabs a { min-width: calc(33.333% - 6px); flex: 0 1 calc(33.333% - 6px); font-size: 10.5px; padding: 10px 4px; border-radius: 10px; }
+      .buscador { margin-left: 0; width: 100%; }
+      th, td { padding: 10px 10px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="contenedor">
+    <div class="topbar">
+      <div class="marca">
+        <img id="logoImg" src="" alt="Sosibé Boutique">
+        <div class="marca-texto">
+          <strong id="appTienda">Sosibé Boutique</strong>
+          <span class="subtitulo" id="appUser"></span>
+        </div>
+      </div>
+      <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
+    </div>
+
+    <nav class="tabs">
+      <a href="dashboard.html">🏠 Panel</a>
+      <a href="inventario.html">📦 Inventario</a>
+      <a href="ventas.html">🧾 Ventas</a>
+      <a href="separados.html">🎀 Separados</a>
+      <a href="pedidos-online.html" class="activo">🛍️ Pedidos Online</a>
+      <a href="clientes.html">👥 Clientes</a>
+      <a href="compras.html">🛒 Compras</a>
+      <a href="proveedores.html">🚚 Proveedores</a>
+      <a href="caja.html">💰 Caja</a>
+      <a href="reportes.html">📊 Reportes</a>
+    </nav>
+
+    <h2 class="seccion">
+      <span>🛍️ Pedidos de la tienda online</span>
+    </h2>
+
+    <div class="filtros">
+      <button class="filtro-btn activo" data-filtro="Pendiente" onclick="filtrar('Pendiente', this)">Pendientes</button>
+      <button class="filtro-btn" data-filtro="Confirmado" onclick="filtrar('Confirmado', this)">Confirmados</button>
+      <button class="filtro-btn" data-filtro="Cancelado" onclick="filtrar('Cancelado', this)">Cancelados</button>
+      <button class="filtro-btn" data-filtro="" onclick="filtrar('', this)">Todos</button>
+      <input class="buscador" id="buscador" placeholder="Buscar por cliente o número..." oninput="renderTabla()">
+    </div>
+
+    <div class="tabla-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Número</th><th>Fecha</th><th>Cliente</th><th>Teléfono</th>
+            <th>Total</th><th>Comprobante</th><th>Estado</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="listaPedidos"><tr><td colspan="8" class="cargando">Cargando pedidos...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MODAL DETALLE -->
+  <div class="modal-overlay" id="modal-detalle">
+    <div class="modal">
+      <button class="cerrar" onclick="cerrarModal()">&times;</button>
+      <h2 id="det-titulo">Pedido</h2>
+      <div class="info-linea"><span>Cliente</span><b id="det-cliente"></b></div>
+      <div class="info-linea"><span>Documento</span><b id="det-documento"></b></div>
+      <div class="info-linea"><span>Teléfono</span><b id="det-telefono"></b></div>
+      <div class="info-linea"><span>Correo</span><b id="det-correo"></b></div>
+      <div class="info-linea"><span>Dirección</span><b id="det-direccion"></b></div>
+      <div class="info-linea"><span>Ciudad</span><b id="det-ciudad"></b></div>
+      <div class="info-linea"><span>Notas</span><b id="det-obs"></b></div>
+
+      <h2 style="font-size:14px;margin-top:18px;">Productos</h2>
+      <div class="items-lista" id="det-items"></div>
+      <div class="total-final" id="det-total"></div>
+
+      <h2 style="font-size:14px;">Comprobante de pago</h2>
+      <div class="comprobante-preview" id="det-comprobante"></div>
+
+      <div class="modal-acciones" id="det-acciones"></div>
+      <div id="det-msg" style="margin-top:10px;font-size:13px;"></div>
+    </div>
+  </div>
+
+<script>
+  const API_URL = 'https://script.google.com/macros/s/AKfycbwF0T4dFM_SbfCxq6dBBSdQBL_xP2R64RZFJW-ly0AGiEWuRvVrIHXV7AQ2WrchaT_W/exec';
+  const LOGO_POR_DEFECTO = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+  const NOMBRE_POR_DEFECTO = 'Sosibé Boutique';
+
+  let pedidos = [];
+  let filtroActual = 'Pendiente';
+  let idSeleccionado = null;
+
+  async function api(accion, params = {}, metodo = 'POST') {
+    const url = metodo === 'GET' ? `${API_URL}?action=${accion}&${new URLSearchParams(params)}` : API_URL;
+    const config = {
+      method: metodo,
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: metodo === 'GET' ? undefined : JSON.stringify({ action: accion, ...params })
+    };
+    const res = await fetch(url, config);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
+    return json.data;
+  }
+
+  function cerrarSesion() {
+    const token = localStorage.getItem('pos_token');
+    if (token) api('logoutSesion', { token }).catch(() => {});
+    localStorage.removeItem('pos_token');
+    localStorage.removeItem('pos_usuario');
+    window.location.href = 'index.html';
+  }
+
+  function esSesionExpirada_(e) {
+    return /expirada|token requerido/i.test((e && e.message) || '');
+  }
+
+  async function requerirSesion(intento = 0) {
+    const token = localStorage.getItem('pos_token');
+    if (!token) { window.location.href = 'index.html'; return null; }
+    try {
+      const sesion = await api('validarSesion', { token }, 'GET');
+      document.getElementById('appUser').innerText = `${sesion.nombre} (${sesion.rol})`;
+      return sesion;
+    } catch (e) {
+      if (esSesionExpirada_(e)) {
+        localStorage.removeItem('pos_token');
+        localStorage.removeItem('pos_usuario');
+        window.location.href = 'index.html';
+        return null;
+      }
+      console.warn('Error temporal validando sesión, reintentando...', e);
+      if (intento >= 8) return null;
+      await new Promise(r => setTimeout(r, 1500));
+      return requerirSesion(intento + 1);
+    }
+  }
+
+  async function cargarConfig() {
+    try {
+      const config = await api('getConfigPublica', {}, 'GET');
+      document.getElementById('appTienda').innerText = config.nombreEmpresa || NOMBRE_POR_DEFECTO;
+      document.getElementById('logoImg').src = config.logoUrl || LOGO_POR_DEFECTO;
+    } catch (e) {
+      document.getElementById('appTienda').innerText = NOMBRE_POR_DEFECTO;
+      document.getElementById('logoImg').src = LOGO_POR_DEFECTO;
+    }
+  }
+
+  function filtrar(estado, btn) {
+    filtroActual = estado;
+    document.querySelectorAll('.filtro-btn').forEach(b => b.classList.remove('activo'));
+    btn.classList.add('activo');
+    renderTabla();
+  }
+
+  function badgeEstado(estado) {
+    if (estado === 'Pendiente') return `<span class="badge badge-pendiente">Pendiente</span>`;
+    if (estado === 'Confirmado') return `<span class="badge badge-confirmado">Confirmado</span>`;
+    return `<span class="badge badge-cancelado">${estado}</span>`;
+  }
+
+  function renderTabla() {
+    const busqueda = document.getElementById('buscador').value.toLowerCase();
+    const filtrados = pedidos.filter(p =>
+      (!filtroActual || p.estadoPedido === filtroActual) &&
+      (p.clienteNombre.toLowerCase().includes(busqueda) || p.numero.toLowerCase().includes(busqueda))
+    );
+
+    const tbody = document.getElementById('listaPedidos');
+    if (filtrados.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" class="cargando">No hay pedidos en esta categoría.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = filtrados.map(p => `
+      <tr>
+        <td><b>${p.numero}</b></td>
+        <td>${p.fecha}</td>
+        <td>${p.clienteNombre}</td>
+        <td>${p.telefono}</td>
+        <td>$${Number(p.total).toLocaleString('es-CO')}</td>
+        <td>${p.comprobanteUrl ? `<a class="link-comprobante" href="${p.comprobanteUrl}" target="_blank">Ver foto</a>` : '<span class="sin-comprobante">Sin subir</span>'}</td>
+        <td>${badgeEstado(p.estadoPedido)}</td>
+        <td>
+          <button class="btn-accion btn-ver" onclick="verDetalle(${p.id})">Ver</button>
+          ${p.estadoPedido === 'Pendiente' ? `
+            <button class="btn-accion btn-aprobar" onclick="aprobarRapido(${p.id})" ${!p.comprobanteUrl ? 'disabled title="Aún no sube comprobante"' : ''}>Aprobar</button>
+          ` : ''}
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  async function cargarPedidos() {
+    try {
+      const token = localStorage.getItem('pos_token');
+      pedidos = await api('getPedidosOnline', { token }, 'GET');
+      renderTabla();
+    } catch (e) {
+      document.getElementById('listaPedidos').innerHTML = `<tr><td colspan="8" class="cargando">Error cargando pedidos: ${e.message}</td></tr>`;
+    }
+  }
+
+  async function verDetalle(id) {
+    idSeleccionado = id;
+    const p = pedidos.find(x => x.id === id);
+    if (!p) return;
+
+    document.getElementById('det-titulo').textContent = 'Pedido ' + p.numero;
+    document.getElementById('det-cliente').textContent = p.clienteNombre;
+    document.getElementById('det-documento').textContent = p.documento || '-';
+    document.getElementById('det-telefono').textContent = p.telefono;
+    document.getElementById('det-correo').textContent = p.correo || '-';
+    document.getElementById('det-direccion').textContent = p.direccion || '-';
+    document.getElementById('det-ciudad').textContent = p.ciudad || '-';
+    document.getElementById('det-obs').textContent = p.observaciones || '-';
+    document.getElementById('det-total').textContent = 'Total: $' + Number(p.total).toLocaleString('es-CO');
+
+    document.getElementById('det-items').innerHTML = '<p class="cargando" style="padding:10px;">Cargando productos...</p>';
+    document.getElementById('det-comprobante').innerHTML = p.comprobanteUrl
+      ? `<img src="${p.comprobanteUrl}" alt="Comprobante"><br><a class="link-comprobante" href="${p.comprobanteUrl}" target="_blank">Abrir en tamaño completo</a>`
+      : '<p class="sin-comprobante">El cliente aún no ha subido el comprobante.</p>';
+
+    const acciones = document.getElementById('det-acciones');
+    document.getElementById('det-msg').textContent = '';
+    if (p.estadoPedido === 'Pendiente') {
+      acciones.innerHTML = `
+        <button class="btn-aprobar" onclick="confirmarPedido(${p.id})" ${!p.comprobanteUrl ? 'disabled' : ''}>✓ Aprobar y descontar stock</button>
+        <button class="btn-rechazar" onclick="mostrarRechazo(${p.id})">✕ Rechazar</button>
+      `;
+    } else {
+      acciones.innerHTML = `<p style="color:var(--gris);font-size:13px;">Este pedido ya fue ${p.estadoPedido.toLowerCase()}.</p>`;
+    }
+
+    document.getElementById('modal-detalle').style.display = 'flex';
+
+    try {
+      const detalle = await api('getDetallePedidoOnline', { idPedido: id }, 'GET');
+      document.getElementById('det-items').innerHTML = detalle.map(it => `
+        <div class="item-row">
+          <span>${it.cantidad}x ${it.producto} ${[it.talla, it.color].filter(Boolean).join(' · ')}</span>
+          <span>$${Number(it.total).toLocaleString('es-CO')}</span>
+        </div>
+      `).join('');
+    } catch (e) {
+      document.getElementById('det-items').innerHTML = `<p class="cargando">Error cargando productos: ${e.message}</p>`;
+    }
+  }
+
+  function cerrarModal() {
+    document.getElementById('modal-detalle').style.display = 'none';
+    idSeleccionado = null;
+  }
+
+  async function confirmarPedido(id) {
+    const msg = document.getElementById('det-msg');
+    msg.textContent = 'Confirmando...';
+    try {
+      const token = localStorage.getItem('pos_token');
+      await api('confirmarPedidoOnline', { token, idPedido: id });
+      msg.style.color = '#2a8a4a';
+      msg.textContent = 'Pedido confirmado y stock descontado.';
+      await cargarPedidos();
+      setTimeout(cerrarModal, 900);
+    } catch (e) {
+      msg.style.color = '#c0392b';
+      msg.textContent = 'Error: ' + e.message;
+    }
+  }
+
+  async function aprobarRapido(id) {
+    if (!confirm('¿Confirmar este pedido y descontar el stock?')) return;
+    try {
+      const token = localStorage.getItem('pos_token');
+      await api('confirmarPedidoOnline', { token, idPedido: id });
+      await cargarPedidos();
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  }
+
+  function mostrarRechazo(id) {
+    const acciones = document.getElementById('det-acciones');
+    acciones.innerHTML = `
+      <div style="width:100%;">
+        <textarea class="motivo" id="motivoRechazo" placeholder="Motivo del rechazo (opcional)" rows="2"></textarea>
+        <div class="modal-acciones">
+          <button class="btn-rechazar" onclick="confirmarRechazo(${id})">Confirmar rechazo</button>
+          <button class="btn-ver" onclick="verDetalle(${id})">Cancelar</button>
+        </div>
+      </div>
+    `;
+  }
+
+  async function confirmarRechazo(id) {
+    const motivo = document.getElementById('motivoRechazo').value;
+    const msg = document.getElementById('det-msg');
+    msg.textContent = 'Rechazando...';
+    try {
+      const token = localStorage.getItem('pos_token');
+      await api('rechazarPedidoOnline', { token, idPedido: id, motivo });
+      msg.style.color = '#c0392b';
+      msg.textContent = 'Pedido rechazado.';
+      await cargarPedidos();
+      setTimeout(cerrarModal, 900);
+    } catch (e) {
+      msg.style.color = '#c0392b';
+      msg.textContent = 'Error: ' + e.message;
+    }
+  }
+
+  window.onload = async () => {
+    const sesion = await requerirSesion();
+    if (!sesion) return;
+    await cargarConfig();
+    await cargarPedidos();
+  };
+</script>
+</body>
+</html>
