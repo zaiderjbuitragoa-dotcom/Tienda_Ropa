@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOSIBÉ Boutique - Tienda</title>
+<style>
+  :root{
+    --rosa:#ec4899; --rosa-suave:#fce7f3; --dorado:#c9a15a; --texto:#3a2f2f; --gris:#8a7f7f;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Segoe UI', Arial, sans-serif; background:var(--rosa-suave); color:var(--texto);
+  }
+  header{
+    background:#fff; padding:18px 24px; display:flex; align-items:center; justify-content:space-between;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06); position:sticky; top:0; z-index:10;
+  }
+  header h1{ color:var(--rosa); font-size:22px; margin:0; }
+  header p{ margin:0; font-size:12px; color:var(--gris); }
+  #cart-btn{
+    background:var(--rosa); color:#fff; border:none; padding:10px 18px; border-radius:20px;
+    font-weight:bold; cursor:pointer; font-size:14px;
+  }
+  main{ max-width:1100px; margin:0 auto; padding:24px; }
+  .filtros{ display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
+  .filtros select, .filtros input{
+    padding:8px 12px; border-radius:8px; border:1px solid #eaa; font-size:14px;
+  }
+  .grid{
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:18px;
+  }
+  .card{
+    background:#fff; border-radius:14px; padding:16px; box-shadow:0 2px 10px rgba(0,0,0,0.05);
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .card .cat{ font-size:11px; color:var(--dorado); text-transform:uppercase; font-weight:bold; }
+  .card h3{ margin:0; font-size:16px; }
+  .card .detalles{ font-size:12px; color:var(--gris); }
+  .card .precio{ font-size:18px; font-weight:bold; color:var(--rosa); margin-top:auto; }
+  .card button{
+    background:var(--texto); color:#fff; border:none; padding:9px; border-radius:8px; cursor:pointer;
+    font-size:13px; margin-top:6px;
+  }
+  .card button:disabled{ background:#ccc; cursor:not-allowed; }
+  .stock-bajo{ color:#c0392b; font-size:11px; }
+
+  /* Carrito lateral */
+  #cart-overlay{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:20;
+  }
+  #cart-panel{
+    position:fixed; top:0; right:0; width:360px; max-width:90vw; height:100%; background:#fff;
+    z-index:21; padding:20px; overflow-y:auto; box-shadow:-4px 0 20px rgba(0,0,0,0.15);
+    display:flex; flex-direction:column;
+  }
+  #cart-panel h2{ color:var(--rosa); margin-top:0; }
+  .cart-item{ display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #f2e0ea; font-size:14px; }
+  .cart-item .qty{ display:flex; align-items:center; gap:6px; }
+  .cart-item .qty button{ width:24px; height:24px; border-radius:6px; border:1px solid #ddd; background:#fff; cursor:pointer; }
+  .close-btn{ background:none; border:none; font-size:22px; cursor:pointer; color:var(--gris); align-self:flex-end; }
+  .total-line{ display:flex; justify-content:space-between; font-weight:bold; font-size:18px; margin:16px 0; }
+  .btn-primary{
+    background:var(--rosa); color:#fff; border:none; padding:12px; border-radius:10px; font-size:15px;
+    cursor:pointer; font-weight:bold; width:100%;
+  }
+  .btn-primary:disabled{ background:#ccc; }
+
+  /* Modal checkout */
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:30;
+    align-items:center; justify-content:center; padding:16px;
+  }
+  .modal{
+    background:#fff; border-radius:14px; padding:24px; max-width:440px; width:100%; max-height:90vh; overflow-y:auto;
+  }
+  .modal h2{ color:var(--rosa); margin-top:0; }
+  .modal label{ display:block; font-size:13px; margin:10px 0 4px; font-weight:600; }
+  .modal input, .modal textarea{
+    width:100%; padding:9px; border-radius:8px; border:1px solid #ddd; font-size:14px;
+  }
+  .aviso{ background:#fff8e6; border:1px solid #f0d98c; padding:12px; border-radius:10px; font-size:13px; margin:14px 0; }
+  .aviso b{ color:#a3760b; }
+  #estado-msg{ font-size:14px; margin-top:10px; padding:10px; border-radius:8px; }
+  .ok{ background:#e6f7ee; color:#1b7a43; }
+  .err{ background:#fdeaea; color:#b3261e; }
+  footer{ text-align:center; padding:24px; font-size:12px; color:var(--gris); }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>SOSIBÉ Boutique</h1>
+    <p>Elegancia · Estilo · Confianza</p>
+  </div>
+  <button id="cart-btn" onclick="abrirCarrito()">🛍️ Carrito (<span id="cart-count">0</span>)</button>
+</header>
+
+<main>
+  <div class="filtros">
+    <input type="text" id="buscador" placeholder="Buscar producto..." oninput="renderProductos()">
+    <select id="filtroCategoria" onchange="renderProductos()"><option value="">Todas las categorías</option></select>
+  </div>
+  <div id="grid" class="grid"><p>Cargando productos...</p></div>
+</main>
+
+<footer>© SOSIBÉ Boutique — Pagos por consignación bancaria, verificados manualmente.</footer>
+
+<!-- CARRITO -->
+<div id="cart-overlay" onclick="cerrarCarrito()"></div>
+<div id="cart-panel">
+  <button class="close-btn" onclick="cerrarCarrito()">&times;</button>
+  <h2>Tu carrito</h2>
+  <div id="cart-items"><p style="color:#999;">Tu carrito está vacío</p></div>
+  <div class="total-line"><span>Total</span><span id="cart-total">$0</span></div>
+  <button class="btn-primary" id="checkout-btn" onclick="abrirCheckout()" disabled>Continuar con la compra</button>
+</div>
+
+<!-- MODAL CHECKOUT -->
+<div class="modal-overlay" id="modal-checkout">
+  <div class="modal">
+    <h2>Datos de envío</h2>
+    <label>Nombre completo *</label>
+    <input type="text" id="c-nombre" required>
+    <label>Teléfono / WhatsApp *</label>
+    <input type="text" id="c-telefono" required>
+    <label>Documento</label>
+    <input type="text" id="c-documento">
+    <label>Correo</label>
+    <input type="email" id="c-correo">
+    <label>Dirección</label>
+    <input type="text" id="c-direccion">
+    <label>Ciudad</label>
+    <input type="text" id="c-ciudad">
+    <label>Notas del pedido</label>
+    <textarea id="c-obs" rows="2"></textarea>
+
+    <div class="aviso">
+      <b>Pago por consignación:</b> al confirmar tu pedido te mostraremos los datos bancarios.
+      Luego debes subir la foto del comprobante para que validemos tu pago.
+    </div>
+
+    <button class="btn-primary" id="btn-crear-pedido" onclick="crearPedido()">Confirmar pedido</button>
+    <div id="estado-msg"></div>
+  </div>
+</div>
+
+<!-- MODAL COMPROBANTE -->
+<div class="modal-overlay" id="modal-comprobante">
+  <div class="modal">
+    <h2 id="pedido-titulo">Pedido creado</h2>
+    <p>Realiza la consignación a la siguiente cuenta y sube tu comprobante:</p>
+    <div class="aviso">
+      <b>Banco:</b> [TU BANCO AQUÍ]<br>
+      <b>Cuenta:</b> [NÚMERO DE CUENTA]<br>
+      <b>Titular:</b> [NOMBRE TITULAR]<br>
+      <b>Valor a pagar:</b> <span id="pedido-total"></span>
+    </div>
+    <label>Foto o captura del comprobante *</label>
+    <input type="file" id="comprobante-file" accept="image/*,.pdf">
+    <button class="btn-primary" id="btn-subir-comprobante" onclick="subirComprobante()" style="margin-top:14px;">Enviar comprobante</button>
+    <div id="estado-comprobante"></div>
+  </div>
+</div>
+
+<script>
+/* ======= CONFIGURA ESTO ======= */
+const API_URL = "PEGA_AQUI_TU_URL_/exec"; // la misma URL /exec que usa tu panel
+/* =============================== */
+
+let productos = [];
+let carrito = []; // {codigo, producto, talla, color, precio, cantidad, stockDisponible}
+let idPedidoActual = null;
+
+async function apiGet(action, extraParams) {
+  const params = new URLSearchParams({ action, ...extraParams });
+  const res = await fetch(API_URL + "?" + params.toString());
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error);
+  return data.data;
+}
+
+async function apiPost(body) {
+  const res = await fetch(API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" }, // evita preflight CORS con Apps Script
+    body: JSON.stringify(body)
+  });
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.error);
+  return data.data;
+}
+
+async function cargarProductos() {
+  try {
+    productos = await apiGet("getProductosTienda");
+    const categorias = [...new Set(productos.map(p => p.categoria).filter(Boolean))];
+    const select = document.getElementById("filtroCategoria");
+    categorias.forEach(c => {
+      const opt = document.createElement("option");
+      opt.value = c; opt.textContent = c;
+      select.appendChild(opt);
+    });
+    renderProductos();
+  } catch (e) {
+    document.getElementById("grid").innerHTML = "<p>No se pudo cargar el catálogo. Intenta más tarde.</p>";
+  }
+}
+
+function renderProductos() {
+  const grid = document.getElementById("grid");
+  const busqueda = document.getElementById("buscador").value.toLowerCase();
+  const categoria = document.getElementById("filtroCategoria").value;
+
+  const filtrados = productos.filter(p =>
+    (!categoria || p.categoria === categoria) &&
+    (p.nombre.toLowerCase().includes(busqueda) || (p.categoria||'').toLowerCase().includes(busqueda))
+  );
+
+  if (filtrados.length === 0) {
+    grid.innerHTML = "<p>No hay productos que coincidan con tu búsqueda.</p>";
+    return;
+  }
+
+  grid.innerHTML = filtrados.map(p => `
+    <div class="card">
+      <div class="cat">${p.categoria || ''}</div>
+      <h3>${p.nombre}</h3>
+      <div class="detalles">${[p.talla, p.color, p.genero].filter(Boolean).join(' · ')}</div>
+      <div class="detalles">${p.stock <= 3 ? '<span class="stock-bajo">¡Últimas ' + p.stock + ' unidades!</span>' : 'Disponible'}</div>
+      <div class="precio">$${Number(p.precio).toLocaleString('es-CO')}</div>
+      <button onclick='agregarAlCarrito(${JSON.stringify(p)})'>Agregar al carrito</button>
+    </div>
+  `).join('');
+}
+
+function agregarAlCarrito(p) {
+  const existente = carrito.find(i => i.codigo === p.codigo);
+  if (existente) {
+    if (existente.cantidad >= p.stock) { alert('No hay más stock disponible de este producto'); return; }
+    existente.cantidad++;
+  } else {
+    carrito.push({ codigo: p.codigo, producto: p.nombre, talla: p.talla, color: p.color, precio: p.precio, cantidad: 1, stockDisponible: p.stock });
+  }
+  actualizarCarritoUI();
+  abrirCarrito();
+}
+
+function cambiarCantidad(codigo, delta) {
+  const item = carrito.find(i => i.codigo === codigo);
+  if (!item) return;
+  item.cantidad += delta;
+  if (item.cantidad <= 0) {
+    carrito = carrito.filter(i => i.codigo !== codigo);
+  } else if (item.cantidad > item.stockDisponible) {
+    item.cantidad = item.stockDisponible;
+  }
+  actualizarCarritoUI();
+}
+
+function actualizarCarritoUI() {
+  const cont = document.getElementById("cart-items");
+  const totalCount = carrito.reduce((s,i) => s + i.cantidad, 0);
+  document.getElementById("cart-count").textContent = totalCount;
+  document.getElementById("checkout-btn").disabled = carrito.length === 0;
+
+  if (carrito.length === 0) {
+    cont.innerHTML = '<p style="color:#999;">Tu carrito está vacío</p>';
+    document.getElementById("cart-total").textContent = "$0";
+    return;
+  }
+
+  cont.innerHTML = carrito.map(i => `
+    <div class="cart-item">
+      <div>
+        <div><b>${i.producto}</b></div>
+        <div style="color:#999;font-size:12px;">${[i.talla,i.color].filter(Boolean).join(' · ')} — $${Number(i.precio).toLocaleString('es-CO')}</div>
+      </div>
+      <div class="qty">
+        <button onclick="cambiarCantidad('${i.codigo}', -1)">-</button>
+        <span>${i.cantidad}</span>
+        <button onclick="cambiarCantidad('${i.codigo}', 1)">+</button>
+      </div>
+    </div>
+  `).join('');
+
+  const total = carrito.reduce((s,i) => s + i.precio * i.cantidad, 0);
+  document.getElementById("cart-total").textContent = "$" + total.toLocaleString('es-CO');
+}
+
+function abrirCarrito(){ document.getElementById("cart-overlay").style.display="block"; document.getElementById("cart-panel").style.display="flex"; }
+function cerrarCarrito(){ document.getElementById("cart-overlay").style.display="none"; document.getElementById("cart-panel").style.display="none"; }
+
+function abrirCheckout() {
+  if (carrito.length === 0) return;
+  cerrarCarrito();
+  document.getElementById("modal-checkout").style.display = "flex";
+}
+
+async function crearPedido() {
+  const nombre = document.getElementById("c-nombre").value.trim();
+  const telefono = document.getElementById("c-telefono").value.trim();
+  const msg = document.getElementById("estado-msg");
+
+  if (!nombre || !telefono) {
+    msg.className = "err"; msg.textContent = "Nombre y teléfono son obligatorios.";
+    return;
+  }
+
+  const boton = document.getElementById("btn-crear-pedido");
+  boton.disabled = true; boton.textContent = "Enviando...";
+
+  const pedido = {
+    cliente: {
+      nombre, telefono,
+      documento: document.getElementById("c-documento").value.trim(),
+      correo: document.getElementById("c-correo").value.trim(),
+      direccion: document.getElementById("c-direccion").value.trim(),
+      ciudad: document.getElementById("c-ciudad").value.trim()
+    },
+    items: carrito.map(i => ({ codigo: i.codigo, producto: i.producto, talla: i.talla, color: i.color, cantidad: i.cantidad, precio: i.precio })),
+    observaciones: document.getElementById("c-obs").value.trim()
+  };
+
+  try {
+    const resultado = await apiPost({ action: "crearPedidoOnline", pedido });
+    idPedidoActual = resultado.idPedido;
+    document.getElementById("modal-checkout").style.display = "none";
+    document.getElementById("pedido-titulo").textContent = "Pedido " + resultado.numero + " creado";
+    document.getElementById("pedido-total").textContent = "$" + Number(resultado.total).toLocaleString('es-CO');
+    document.getElementById("modal-comprobante").style.display = "flex";
+    carrito = [];
+    actualizarCarritoUI();
+  } catch (e) {
+    msg.className = "err"; msg.textContent = "Error: " + e.message;
+  } finally {
+    boton.disabled = false; boton.textContent = "Confirmar pedido";
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function subirComprobante() {
+  const fileInput = document.getElementById("comprobante-file");
+  const estado = document.getElementById("estado-comprobante");
+  const boton = document.getElementById("btn-subir-comprobante");
+
+  if (!fileInput.files.length) {
+    estado.className = "err"; estado.textContent = "Selecciona una imagen o PDF del comprobante.";
+    return;
+  }
+
+  boton.disabled = true; boton.textContent = "Subiendo...";
+  try {
+    const file = fileInput.files[0];
+    const base64Data = await fileToBase64(file);
+    await apiPost({
+      action: "subirComprobante",
+      idPedido: idPedidoActual,
+      base64Data,
+      mimeType: file.type,
+      nombreArchivo: file.name
+    });
+    estado.className = "ok";
+    estado.textContent = "¡Comprobante recibido! Te contactaremos al confirmar tu pago.";
+    boton.style.display = "none";
+  } catch (e) {
+    estado.className = "err"; estado.textContent = "Error: " + e.message;
+    boton.disabled = false; boton.textContent = "Enviar comprobante";
+  }
+}
+
+cargarProductos();
+</script>
+</body>
+</html>
