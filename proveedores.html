@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Proveedores · Mi Tienda de Ropa</title>
+  <title>Proveedores · SOSIBÉ Boutique</title>
   <style>
     :root {
       --rosa: #f7a8c4;
@@ -100,14 +100,18 @@
     }
     .mensaje-error { color: #c0447a; font-size: 12px; margin-top: 8px; display: none; }
   </style>
+  <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 
   <div class="contenedor">
     <div class="topbar">
       <div class="marca">
-        <img id="logoImg" src="" alt="" style="display:none;">
-        <strong id="appTienda">Mi Tienda de Ropa</strong> · <span id="appUser"></span>
+        <img id="logoImg" src="" alt="SOSIBÉ Boutique">
+        <div class="marca-texto">
+          <strong id="appTienda">SOSIBÉ Boutique</strong>
+          <span class="subtitulo" id="appUser"></span>
+        </div>
       </div>
       <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
     </div>
@@ -117,6 +121,7 @@
       <a href="inventario.html">📦 Inventario</a>
       <a href="ventas.html">🧾 Ventas</a>
       <a href="separados.html">🎀 Separados</a>
+      <a href="pedidos-online.html">🛍️ Pedidos Online<span class="nav-badge" id="navBadgePedidos">0</span></a>
       <a href="clientes.html">👥 Clientes</a>
       <a href="compras.html">🛒 Compras</a>
       <a href="proveedores.html" class="activo">🚚 Proveedores</a>
@@ -192,76 +197,15 @@
     </div>
   </div>
 
+  <script src="assets/app.js"></script>
   <script>
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwF0T4dFM_SbfCxq6dBBSdQBL_xP2R64RZFJW-ly0AGiEWuRvVrIHXV7AQ2WrchaT_W/exec';
     let TODOS_LOS_PROVEEDORES = [];
 
-    async function api(accion, params = {}, metodo = 'POST') {
-      const url = metodo === 'GET' ? `${API_URL}?action=${accion}&${new URLSearchParams(params)}` : API_URL;
-      const config = {
-        method: metodo,
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: metodo === 'GET' ? undefined : JSON.stringify({ action: accion, ...params })
-      };
-      const res = await fetch(url, config);
-      const json = await res.json();
-      if (!json.ok) throw new Error(json.error);
-      return json.data;
-    }
-
     function getToken() { return localStorage.getItem('pos_token'); }
-
-    function cerrarSesion() {
-      const token = getToken();
-      if (token) api('logoutSesion', { token }).catch(() => {});
-      localStorage.removeItem('pos_token');
-      localStorage.removeItem('pos_usuario');
-      window.location.href = 'index.html';
-    }
 
     // Solo se considera "sesión vencida" cuando el backend lo dice explícitamente.
     // Cualquier otro error (red, timeout de Apps Script, límite de ejecuciones
     // concurrentes, etc.) es transitorio: NO debe sacar al usuario del sistema.
-    function esSesionExpirada_(e) {
-      return /expirada|token requerido/i.test((e && e.message) || '');
-    }
-
-    async function requerirSesion(intento = 0) {
-      const token = getToken();
-      if (!token) { window.location.href = 'index.html'; return null; }
-      try {
-        const sesion = await api('validarSesion', { token }, 'GET');
-        document.getElementById('appUser').innerText = `${sesion.nombre} (${sesion.rol})`;
-        return sesion;
-      } catch (e) {
-        if (esSesionExpirada_(e)) {
-          localStorage.removeItem('pos_token');
-          localStorage.removeItem('pos_usuario');
-          window.location.href = 'index.html';
-          return null;
-        }
-        console.warn('Error temporal validando sesión, reintentando...', e);
-        if (intento >= 8) {
-          console.error('No se pudo validar la sesión tras varios intentos. Se mantiene la sesión activa; recarga la página si el problema persiste.');
-          return null;
-        }
-        await new Promise(r => setTimeout(r, 1500));
-        return requerirSesion(intento + 1);
-      }
-    }
-
-    async function cargarConfig() {
-      try {
-        const config = await api('getConfigPublica', {}, 'GET');
-        document.getElementById('appTienda').innerText = config.nombreEmpresa || 'Mi Tienda de Ropa';
-        if (config.logoUrl) {
-          const img = document.getElementById('logoImg');
-          img.src = config.logoUrl;
-          img.style.display = 'inline-block';
-        }
-      } catch (e) { console.error(e); }
-    }
-
     function renderResumen(proveedores) {
       const activos = proveedores.filter(p => p.estado !== 'Inactivo');
       document.getElementById('resumenStats').innerHTML = `
@@ -404,6 +348,7 @@
       const sesion = await requerirSesion();
       if (!sesion) return;
       await cargarConfig();
+      cargarBadgePedidosNav();
       await cargarProveedores();
     };
   </script>
