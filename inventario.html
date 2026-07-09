@@ -86,6 +86,15 @@
     .scanner-detalle { text-align: left; margin-top: 10px; }
     .scanner-detalle summary { cursor: pointer; font-size: 11px; color: var(--gris); }
     .scanner-detalle pre { white-space: pre-wrap; word-break: break-word; font-size: 11px; color: #555; max-height: 120px; overflow-y: auto; background: white; border-radius: 8px; padding: 8px; margin-top: 6px; }
+
+    /* FOTOS DEL PRODUCTO (múltiples) */
+    .fotos-box{ margin-bottom: 16px; }
+    .fotos-box label{ display:block; font-size:11px; color:var(--gris); margin-bottom:6px; font-weight:600; text-transform:uppercase; }
+    .fotos-grid{ display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .foto-thumb{ position:relative; width:64px; height:64px; border-radius:8px; overflow:hidden; border:1.5px solid #f0d5e0; }
+    .foto-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .foto-thumb.nueva{ border-color:var(--rosa-oscuro); }
+    .foto-thumb .foto-tag{ position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.55); color:#fff; font-size:9px; text-align:center; padding:1px 0; }
   </style>
   <link rel="stylesheet" href="assets/style.css">
 </head>
@@ -216,6 +225,13 @@
         </div>
       </div>
 
+      <!-- FOTOS DEL PRODUCTO (múltiples) -->
+      <div class="fotos-box">
+        <label>Fotos del producto (puedes elegir varias)</label>
+        <input type="file" id="pFotos" accept="image/*" multiple onchange="previsualizarFotos(event)">
+        <div class="fotos-grid" id="fotosGrid"></div>
+      </div>
+
       <label>Observaciones</label>
       <textarea id="pObservaciones" rows="2"></textarea>
 
@@ -257,6 +273,12 @@
     // ⚠️ Reemplaza esta URL por la de tu propia implementación de Apps Script (termina en /exec)
     let TOKEN = null;
     let PRODUCTOS = [];
+
+    // Fotos del producto que se está editando: las que ya estaban guardadas
+    // en la hoja (FOTOS_EXISTENTES) y las que se acaban de seleccionar en este
+    // modal y todavía no se han subido (ARCHIVOS_FOTOS_NUEVAS).
+    let ARCHIVOS_FOTOS_NUEVAS = [];
+    let FOTOS_EXISTENTES = [];
 
     // Solo se considera "sesión vencida" cuando el backend lo dice explícitamente.
     // Cualquier otro error (red, timeout de Apps Script, límite de ejecuciones
@@ -329,6 +351,10 @@
     function abrirModal(p) {
       document.getElementById('modalMsg').style.display = 'none';
       reiniciarEscaner();
+      ARCHIVOS_FOTOS_NUEVAS = [];
+      FOTOS_EXISTENTES = (p && p.fotos) ? p.fotos : [];
+      document.getElementById('pFotos').value = '';
+      renderFotosGrid();
       const campos = ['pId','pCodigo','pCodigoBarras','pNombre','pCategoria','pMarca','pColor','pTalla','pGenero','pProveedor','pCosto','pPrecio','pStock','pStockMinimo','pUbicacion','pEstado','pObservaciones'];
       if (p && p.id) {
         document.getElementById('modalTitulo').innerText = 'Editar producto';
@@ -361,6 +387,42 @@
 
     function cerrarModal() {
       document.getElementById('overlayProducto').classList.remove('activo');
+    }
+
+    // ---------- FOTOS DEL PRODUCTO (múltiples) ----------
+    function previsualizarFotos(event) {
+      ARCHIVOS_FOTOS_NUEVAS = Array.from(event.target.files);
+      renderFotosGrid();
+    }
+
+    function renderFotosGrid() {
+      const grid = document.getElementById('fotosGrid');
+      const existentesHtml = FOTOS_EXISTENTES.map(url =>
+        `<div class="foto-thumb"><img src="${url}"><span class="foto-tag">Guardada</span></div>`
+      ).join('');
+      const nuevasHtml = ARCHIVOS_FOTOS_NUEVAS.map(f =>
+        `<div class="foto-thumb nueva"><img src="${URL.createObjectURL(f)}"><span class="foto-tag">Nueva</span></div>`
+      ).join('');
+      grid.innerHTML = existentesHtml + nuevasHtml;
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function subirFotosSeleccionadas(codigo) {
+      if (!ARCHIVOS_FOTOS_NUEVAS.length) return;
+      const fotos = await Promise.all(ARCHIVOS_FOTOS_NUEVAS.map(async f => ({
+        base64Data: await fileToBase64(f),
+        mimeType: f.type,
+        nombreArchivo: f.name
+      })));
+      await api('subirFotosProducto', { token: TOKEN, codigo, fotos });
     }
 
     // ---------- ESCANER DE ETIQUETA (foto -> autocompletar) ----------
@@ -547,7 +609,14 @@
       const btn = document.getElementById('btnGuardarProducto');
       btn.disabled = true; btn.innerText = 'Guardando...';
       try {
-        await api('guardarProducto', { token: TOKEN, producto });
+        const resultado = await api('guardarProducto', { token: TOKEN, producto });
+        let codigoFinal = producto.codigo;
+        if (!codigoFinal) {
+          const lista = await api('getInventario', {}, 'GET');
+          const encontrado = lista.find(x => Number(x.id) === Number(resultado.id));
+          codigoFinal = encontrado ? encontrado.codigo : null;
+        }
+        if (codigoFinal) await subirFotosSeleccionadas(codigoFinal);
         cerrarModal();
         await cargarInventario();
       } catch (e) {
