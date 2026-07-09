@@ -37,6 +37,7 @@
       color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 13px;
     }
     .btn-principal:hover { opacity: 0.9; }
+    .btn-principal:disabled { opacity: 0.6; cursor: not-allowed; }
     .btn-secundario { padding: 9px 14px; background: white; border: 1.5px solid #f0d5e0; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 12px; color: var(--rosa-oscuro); }
     .btn-secundario:hover { border-color: var(--rosa-oscuro); }
 
@@ -95,6 +96,7 @@
     .foto-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
     .foto-thumb.nueva{ border-color:var(--rosa-oscuro); }
     .foto-thumb .foto-tag{ position:absolute; bottom:0; left:0; right:0; background:rgba(0,0,0,0.55); color:#fff; font-size:9px; text-align:center; padding:1px 0; }
+    .fotos-estado{ font-size:11px; color:var(--rosa-oscuro); margin-top:6px; min-height:14px; }
   </style>
   <link rel="stylesheet" href="assets/style.css">
 </head>
@@ -229,6 +231,7 @@
       <div class="fotos-box">
         <label>Fotos del producto (puedes elegir varias)</label>
         <input type="file" id="pFotos" accept="image/*" multiple onchange="previsualizarFotos(event)">
+        <div class="fotos-estado" id="fotosEstado"></div>
         <div class="fotos-grid" id="fotosGrid"></div>
       </div>
 
@@ -270,7 +273,8 @@
 
   <script src="assets/app.js"></script>
   <script>
-    // ⚠️ Reemplaza esta URL por la de tu propia implementación de Apps Script (termina en /exec)
+    // ⚠️ La URL de la API vive en assets/app.js (API_URL). No hace falta
+    // repetirla aquí.
     let TOKEN = null;
     let PRODUCTOS = [];
 
@@ -280,9 +284,6 @@
     let ARCHIVOS_FOTOS_NUEVAS = [];
     let FOTOS_EXISTENTES = [];
 
-    // Solo se considera "sesión vencida" cuando el backend lo dice explícitamente.
-    // Cualquier otro error (red, timeout de Apps Script, límite de ejecuciones
-    // concurrentes, etc.) es transitorio: NO debe sacar al usuario del sistema.
     // ---------- LISTADO / FILTROS ----------
     async function cargarInventario() {
       const b = document.getElementById('listaInv');
@@ -354,6 +355,7 @@
       ARCHIVOS_FOTOS_NUEVAS = [];
       FOTOS_EXISTENTES = (p && p.fotos) ? p.fotos : [];
       document.getElementById('pFotos').value = '';
+      document.getElementById('fotosEstado').innerText = '';
       renderFotosGrid();
       const campos = ['pId','pCodigo','pCodigoBarras','pNombre','pCategoria','pMarca','pColor','pTalla','pGenero','pProveedor','pCosto','pPrecio','pStock','pStockMinimo','pUbicacion','pEstado','pObservaciones'];
       if (p && p.id) {
@@ -390,8 +392,18 @@
     }
 
     // ---------- FOTOS DEL PRODUCTO (múltiples) ----------
+    // FIX (julio 2026 #2): antes se mandaban las fotos del celular tal cual
+    // (varios MB cada una) convertidas a base64. Eso hacía que la petición a
+    // Apps Script fuera demasiado pesada/lenta y se quedara "colgada" sin
+    // error visible ("Guardando..." para siempre). Ahora cada foto se
+    // redimensiona y comprime en el navegador ANTES de convertirla a base64,
+    // así el payload real que viaja es de pocos cientos de KB por foto.
+    const FOTO_MAX_DIMENSION = 1280; // px, lado más largo
+    const FOTO_CALIDAD_JPEG = 0.72;  // 0-1
+
     function previsualizarFotos(event) {
       ARCHIVOS_FOTOS_NUEVAS = Array.from(event.target.files);
+      document.getElementById('fotosEstado').innerText = '';
       renderFotosGrid();
     }
 
@@ -406,23 +418,56 @@
       grid.innerHTML = existentesHtml + nuevasHtml;
     }
 
-    function fileToBase64(file) {
+    // Redimensiona/comprime un File de imagen en el navegador (canvas) y
+    // devuelve { base64Data, mimeType, nombreArchivo } listo para enviar.
+    function comprimirImagen(file, maxDim, calidad) {
       return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result.split(",")[1]);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
+        const img = new Image();
+        const urlTemporal = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(urlTemporal);
+          let { width, height } = img;
+          if (width > height && width > maxDim) {
+            height = Math.round(height * (maxDim / width));
+            width = maxDim;
+          } else if (height > maxDim) {
+            width = Math.round(width * (maxDim / height));
+            height = maxDim;
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(blob => {
+            if (!blob) { reject(new Error('No se pudo comprimir la imagen')); return; }
+            const reader = new FileReader();
+            reader.onload = () => resolve({
+              base64Data: reader.result.split(',')[1],
+              mimeType: 'image/jpeg',
+              nombreArchivo: (file.name || 'foto').replace(/\.[^.]+$/, '') + '.jpg'
+            });
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          }, 'image/jpeg', calidad);
+        };
+        img.onerror = () => { URL.revokeObjectURL(urlTemporal); reject(new Error('No se pudo abrir la imagen')); };
+        img.src = urlTemporal;
       });
     }
 
     async function subirFotosSeleccionadas(codigo) {
       if (!ARCHIVOS_FOTOS_NUEVAS.length) return;
-      const fotos = await Promise.all(ARCHIVOS_FOTOS_NUEVAS.map(async f => ({
-        base64Data: await fileToBase64(f),
-        mimeType: f.type,
-        nombreArchivo: f.name
-      })));
+      const estadoEl = document.getElementById('fotosEstado');
+      const fotos = [];
+      for (let i = 0; i < ARCHIVOS_FOTOS_NUEVAS.length; i++) {
+        estadoEl.innerText = `Comprimiendo foto ${i + 1} de ${ARCHIVOS_FOTOS_NUEVAS.length}...`;
+        const comprimida = await comprimirImagen(ARCHIVOS_FOTOS_NUEVAS[i], FOTO_MAX_DIMENSION, FOTO_CALIDAD_JPEG);
+        fotos.push(comprimida);
+      }
+      estadoEl.innerText = `Subiendo ${fotos.length} foto(s)...`;
       await api('subirFotosProducto', { token: TOKEN, codigo, fotos });
+      estadoEl.innerText = '';
     }
 
     // ---------- ESCANER DE ETIQUETA (foto -> autocompletar) ----------
@@ -616,7 +661,10 @@
           const encontrado = lista.find(x => Number(x.id) === Number(resultado.id));
           codigoFinal = encontrado ? encontrado.codigo : null;
         }
-        if (codigoFinal) await subirFotosSeleccionadas(codigoFinal);
+        if (codigoFinal) {
+          btn.innerText = 'Subiendo fotos...';
+          await subirFotosSeleccionadas(codigoFinal);
+        }
         cerrarModal();
         await cargarInventario();
       } catch (e) {
@@ -682,6 +730,7 @@
     window.onload = async () => {
       const sesion = await requerirSesion();
       if (!sesion) return;
+      TOKEN = localStorage.getItem('pos_token');
       await cargarConfig();
       cargarBadgePedidosNav();
       await cargarInventario();
