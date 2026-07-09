@@ -36,6 +36,12 @@
     background:#fff; border-radius:14px; padding:16px; box-shadow:0 2px 10px rgba(0,0,0,0.05);
     display:flex; flex-direction:column; gap:6px;
   }
+  .card-img-wrap{
+    width:100%; aspect-ratio:3/4; border-radius:10px; overflow:hidden;
+    background:linear-gradient(135deg,#fce7f3,#f6d9ea); margin-bottom:4px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .card-img-wrap img{ width:100%; height:100%; object-fit:cover; display:block; }
   .card .cat{ font-size:11px; color:var(--dorado); text-transform:uppercase; font-weight:bold; }
   .card h3{ margin:0; font-size:16px; }
   .card .detalles{ font-size:12px; color:var(--gris); }
@@ -45,6 +51,9 @@
     font-size:13px; margin-top:6px;
   }
   .card button:disabled{ background:#ccc; cursor:not-allowed; }
+  .card .btn-wsp-prod{
+    background:#25D366; display:flex; align-items:center; justify-content:center; gap:6px;
+  }
   .stock-bajo{ color:#c0392b; font-size:11px; }
 
   /* Carrito lateral */
@@ -67,6 +76,18 @@
     cursor:pointer; font-weight:bold; width:100%;
   }
   .btn-primary:disabled{ background:#ccc; }
+  .btn-secondary{
+    background:#fff; color:var(--texto); border:1px solid #ddd; padding:12px; border-radius:10px;
+    font-size:15px; cursor:pointer; font-weight:bold;
+  }
+  .fila-botones{ display:flex; gap:10px; margin-top:14px; }
+  .fila-botones .btn-secondary{ flex:1; }
+  .fila-botones .btn-primary{ flex:2; }
+  .btn-wsp-full{
+    background:#25D366; color:#fff; border:none; padding:12px; border-radius:10px; font-size:15px;
+    cursor:pointer; font-weight:bold; width:100%; margin-top:10px; display:flex; align-items:center;
+    justify-content:center; gap:8px;
+  }
 
   /* Modal checkout */
   .modal-overlay{
@@ -87,6 +108,11 @@
   .ok{ background:#e6f7ee; color:#1b7a43; }
   .err{ background:#fdeaea; color:#b3261e; }
   footer{ text-align:center; padding:24px; font-size:12px; color:var(--gris); }
+
+  .gracias-block{ text-align:center; margin-top:10px; }
+  .gracias-block .emoji{ font-size:44px; }
+  .gracias-block h3{ color:var(--rosa); margin:6px 0; }
+  .gracias-block p{ color:var(--gris); font-size:13px; margin-bottom:16px; }
 
   /* Botón flotante de WhatsApp */
   #whatsapp-flotante{
@@ -172,7 +198,10 @@
       Luego debes subir la foto del comprobante para que validemos tu pago.
     </div>
 
-    <button class="btn-primary" id="btn-crear-pedido" onclick="crearPedido()">Confirmar pedido</button>
+    <div class="fila-botones">
+      <button class="btn-secondary" onclick="cerrarCheckout()">Cancelar</button>
+      <button class="btn-primary" id="btn-crear-pedido" onclick="crearPedido()">Confirmar pedido</button>
+    </div>
     <div id="estado-msg"></div>
   </div>
 </div>
@@ -180,18 +209,29 @@
 <!-- MODAL COMPROBANTE -->
 <div class="modal-overlay" id="modal-comprobante">
   <div class="modal">
-    <h2 id="pedido-titulo">Pedido creado</h2>
-    <p>Realiza la consignación a la siguiente cuenta y sube tu comprobante:</p>
-    <div class="aviso">
-      <b>Banco:</b> [TU BANCO AQUÍ]<br>
-      <b>Cuenta:</b> [NÚMERO DE CUENTA]<br>
-      <b>Titular:</b> [NOMBRE TITULAR]<br>
-      <b>Valor a pagar:</b> <span id="pedido-total"></span>
+    <div id="comprobante-form">
+      <h2 id="pedido-titulo">Pedido creado</h2>
+      <p>Realiza la consignación a la siguiente cuenta y sube tu comprobante:</p>
+      <div class="aviso">
+        <b>Banco:</b> [TU BANCO AQUÍ]<br>
+        <b>Cuenta:</b> [NÚMERO DE CUENTA]<br>
+        <b>Titular:</b> [NOMBRE TITULAR]<br>
+        <b>Valor a pagar:</b> <span id="pedido-total"></span>
+      </div>
+      <label>Foto o captura del comprobante *</label>
+      <input type="file" id="comprobante-file" accept="image/*,.pdf">
+      <button class="btn-primary" id="btn-subir-comprobante" onclick="subirComprobante()" style="margin-top:14px;">Enviar comprobante</button>
+      <button class="btn-wsp-full" onclick="enviarPedidoWhatsapp()">💬 Avisar mi pedido por WhatsApp</button>
+      <div id="estado-comprobante"></div>
     </div>
-    <label>Foto o captura del comprobante *</label>
-    <input type="file" id="comprobante-file" accept="image/*,.pdf">
-    <button class="btn-primary" id="btn-subir-comprobante" onclick="subirComprobante()" style="margin-top:14px;">Enviar comprobante</button>
-    <div id="estado-comprobante"></div>
+
+    <div class="gracias-block" id="gracias-block" style="display:none;">
+      <div class="emoji">🎉</div>
+      <h3>¡Gracias por tu compra!</h3>
+      <p>Ya recibimos tu comprobante. Te contactaremos muy pronto para confirmar tu pago y coordinar el envío.</p>
+      <button class="btn-wsp-full" onclick="enviarPedidoWhatsapp()">💬 Escribir por WhatsApp</button>
+      <button class="btn-primary" style="margin-top:10px;" onclick="volverATienda()">Volver a la tienda</button>
+    </div>
   </div>
 </div>
 
@@ -200,9 +240,21 @@
     const API_URL = 'https://script.google.com/macros/s/AKfycbwF0T4dFM_SbfCxq6dBBSdQBL_xP2R64RZFJW-ly0AGiEWuRvVrIHXV7AQ2WrchaT_W/exec';
 /* =============================== */
 
+// Imagen de respaldo cuando la prenda aún no tiene foto cargada en la hoja de datos
+const IMG_PLACEHOLDER = "data:image/svg+xml;utf8," + encodeURIComponent(`
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 400'>
+  <rect width='300' height='400' fill='#fce7f3'/>
+  <path d='M150 90 L120 120 L100 110 L70 150 L90 165 L90 320 L210 320 L210 165 L230 150 L200 110 L180 120 Z'
+        fill='none' stroke='#c9a15a' stroke-width='6' stroke-linejoin='round'/>
+  <circle cx='150' cy='108' r='14' fill='none' stroke='#c9a15a' stroke-width='6'/>
+  <text x='150' y='360' font-family='Segoe UI, Arial' font-size='15' fill='#8a7f7f' text-anchor='middle'>Foto próximamente</text>
+</svg>`);
+
 let productos = [];
 let carrito = []; // {codigo, producto, talla, color, precio, cantidad, stockDisponible}
 let idPedidoActual = null;
+let pedidoNumeroActual = null;
+let pedidoTotalActual = null;
 
 async function apiGet(action, extraParams) {
   const params = new URLSearchParams({ action, ...extraParams });
@@ -256,12 +308,17 @@ function renderProductos() {
 
   grid.innerHTML = filtrados.map(p => `
     <div class="card">
+      <div class="card-img-wrap">
+        <img src="${p.imagen ? p.imagen : IMG_PLACEHOLDER}" alt="${p.nombre}" loading="lazy"
+             onerror="this.onerror=null;this.src='${IMG_PLACEHOLDER}';">
+      </div>
       <div class="cat">${p.categoria || ''}</div>
       <h3>${p.nombre}</h3>
       <div class="detalles">${[p.talla, p.color, p.genero].filter(Boolean).join(' · ')}</div>
       <div class="detalles">${p.stock <= 3 ? '<span class="stock-bajo">¡Últimas ' + p.stock + ' unidades!</span>' : 'Disponible'}</div>
       <div class="precio">$${Number(p.precio).toLocaleString('es-CO')}</div>
       <button onclick='agregarAlCarrito(${JSON.stringify(p)})'>Agregar al carrito</button>
+      <button class="btn-wsp-prod" onclick='preguntarWhatsapp(${JSON.stringify(p)})'>💬 Preguntar por esta prenda</button>
     </div>
   `).join('');
 }
@@ -329,6 +386,14 @@ function abrirCheckout() {
   document.getElementById("modal-checkout").style.display = "flex";
 }
 
+// Ajuste 3: botón para cancelar el formulario de envío y volver al carrito
+function cerrarCheckout() {
+  document.getElementById("modal-checkout").style.display = "none";
+  document.getElementById("estado-msg").textContent = "";
+  document.getElementById("estado-msg").className = "";
+  abrirCarrito();
+}
+
 async function crearPedido() {
   const nombre = document.getElementById("c-nombre").value.trim();
   const telefono = document.getElementById("c-telefono").value.trim();
@@ -357,9 +422,14 @@ async function crearPedido() {
   try {
     const resultado = await apiPost({ action: "crearPedidoOnline", pedido });
     idPedidoActual = resultado.idPedido;
+    pedidoNumeroActual = resultado.numero;
+    pedidoTotalActual = Number(resultado.total).toLocaleString('es-CO');
+
     document.getElementById("modal-checkout").style.display = "none";
     document.getElementById("pedido-titulo").textContent = "Pedido " + resultado.numero + " creado";
-    document.getElementById("pedido-total").textContent = "$" + Number(resultado.total).toLocaleString('es-CO');
+    document.getElementById("pedido-total").textContent = "$" + pedidoTotalActual;
+    document.getElementById("comprobante-form").style.display = "block";
+    document.getElementById("gracias-block").style.display = "none";
     document.getElementById("modal-comprobante").style.display = "flex";
     carrito = [];
     actualizarCarritoUI();
@@ -400,13 +470,33 @@ async function subirComprobante() {
       mimeType: file.type,
       nombreArchivo: file.name
     });
-    estado.className = "ok";
-    estado.textContent = "¡Comprobante recibido! Te contactaremos al confirmar tu pago.";
-    boton.style.display = "none";
+    // Ajuste 1: pantalla de agradecimiento con opción de volver a la tienda
+    document.getElementById("comprobante-form").style.display = "none";
+    document.getElementById("gracias-block").style.display = "block";
   } catch (e) {
     estado.className = "err"; estado.textContent = "Error: " + e.message;
     boton.disabled = false; boton.textContent = "Enviar comprobante";
   }
+}
+
+function volverATienda() {
+  document.getElementById("modal-comprobante").style.display = "none";
+  document.getElementById("comprobante-form").style.display = "block";
+  document.getElementById("gracias-block").style.display = "none";
+
+  // resetear formulario de comprobante
+  document.getElementById("comprobante-file").value = "";
+  const boton = document.getElementById("btn-subir-comprobante");
+  boton.disabled = false; boton.textContent = "Enviar comprobante";
+  document.getElementById("estado-comprobante").textContent = "";
+  document.getElementById("estado-comprobante").className = "";
+
+  // resetear formulario de envío
+  ["c-nombre","c-telefono","c-documento","c-correo","c-direccion","c-ciudad","c-obs"].forEach(id => {
+    document.getElementById(id).value = "";
+  });
+
+  renderProductos();
 }
 
 /* ======= EDITA AQUÍ TU NÚMERO DE WHATSAPP =======
@@ -422,6 +512,33 @@ function activarBotonWhatsapp() {
   const mensaje = encodeURIComponent("Hola, quiero más información sobre un producto de SOSIBÉ Boutique 😊");
   btn.href = `https://wa.me/${NUMERO_WHATSAPP}?text=${mensaje}`;
   btn.style.display = "flex";
+}
+
+// Ajuste 2: preguntar por una prenda específica por WhatsApp (con foto si está disponible)
+function preguntarWhatsapp(p) {
+  if (!NUMERO_WHATSAPP || NUMERO_WHATSAPP === '0000000000') {
+    alert('El número de WhatsApp aún no está configurado.');
+    return;
+  }
+  let mensaje = `Hola! 👋 Estoy interesada en esta prenda de SOSIBÉ Boutique:\n\n` +
+    `*${p.nombre}*\n` +
+    `${[p.talla, p.color, p.genero].filter(Boolean).join(' · ')}\n` +
+    `Precio: $${Number(p.precio).toLocaleString('es-CO')}`;
+  if (p.imagen) {
+    mensaje += `\n\nFoto: ${p.imagen}`;
+  }
+  window.open(`https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(mensaje)}`, '_blank');
+}
+
+// Ajuste 3: avisar el pedido ya confirmado por WhatsApp
+function enviarPedidoWhatsapp() {
+  if (!NUMERO_WHATSAPP || NUMERO_WHATSAPP === '0000000000') {
+    alert('El número de WhatsApp aún no está configurado.');
+    return;
+  }
+  const mensaje = `Hola! Acabo de confirmar mi pedido ${pedidoNumeroActual || ''} en SOSIBÉ Boutique ` +
+    `por un total de $${pedidoTotalActual || ''}. Ya voy a realizar la consignación y enviaré el comprobante. 😊`;
+  window.open(`https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(mensaje)}`, '_blank');
 }
 
 cargarProductos();
