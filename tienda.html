@@ -77,6 +77,14 @@
   }
   .stock-bajo{ color:#c0392b; font-size:11px; }
 
+  /* Galería de fotos por producto (miniaturas) */
+  .thumbs{ display:flex; gap:4px; margin-top:2px; flex-wrap:wrap; }
+  .thumb{
+    width:32px; height:32px; border-radius:6px; object-fit:cover; cursor:pointer;
+    border:1.5px solid transparent; opacity:.65;
+  }
+  .thumb.active{ border-color:var(--rosa); opacity:1; }
+
   /* Carrito lateral */
   #cart-overlay{
     display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:20;
@@ -331,9 +339,13 @@ function renderProductos() {
   grid.innerHTML = filtrados.map(p => `
     <div class="card">
       <div class="card-img-wrap">
-        <img src="${p.imagen ? p.imagen : IMG_PLACEHOLDER}" alt="${p.nombre}" loading="lazy"
+        <img id="img-${p.codigo}" src="${(p.fotos && p.fotos[0]) ? p.fotos[0] : IMG_PLACEHOLDER}" alt="${p.nombre}" loading="lazy"
              onerror="this.onerror=null;this.src='${IMG_PLACEHOLDER}';">
       </div>
+      ${p.fotos && p.fotos.length > 1 ? `
+      <div class="thumbs">
+        ${p.fotos.map((url, idx) => `<img src="${url}" class="thumb${idx===0?' active':''}" onclick="cambiarFotoPrincipal('${p.codigo}','${url}', this)">`).join('')}
+      </div>` : ''}
       <div class="cat">${p.categoria || ''}</div>
       <h3>${p.nombre}</h3>
       <div class="detalles">${[p.talla, p.color, p.genero].filter(Boolean).join(' · ')}</div>
@@ -343,6 +355,13 @@ function renderProductos() {
       <button class="btn-wsp-prod" onclick='preguntarWhatsapp(${JSON.stringify(p)})'>💬 Preguntar por esta prenda</button>
     </div>
   `).join('');
+}
+
+function cambiarFotoPrincipal(codigo, url, thumbEl) {
+  const img = document.getElementById('img-' + codigo);
+  if (img) img.src = url;
+  thumbEl.parentElement.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+  thumbEl.classList.add('active');
 }
 
 function agregarAlCarrito(p) {
@@ -546,8 +565,8 @@ function preguntarWhatsapp(p) {
     `*${p.nombre}*\n` +
     `${[p.talla, p.color, p.genero].filter(Boolean).join(' · ')}\n` +
     `Precio: $${Number(p.precio).toLocaleString('es-CO')}`;
-  if (p.imagen) {
-    mensaje += `\n\nFoto: ${p.imagen}`;
+  if (p.fotos && p.fotos[0]) {
+    mensaje += `\n\nFoto: ${p.fotos[0]}`;
   }
   window.open(`https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(mensaje)}`, '_blank');
 }
