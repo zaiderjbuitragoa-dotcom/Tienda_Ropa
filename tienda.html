@@ -9,38 +9,59 @@
     --rosa:#ec4899; --rosa-suave:#fce7f3; --dorado:#c9a15a; --texto:#3a2f2f; --gris:#8a7f7f;
   }
   *{box-sizing:border-box;}
+  html, body{ width:100%; overflow-x:hidden; }
   body{
     margin:0; font-family:'Segoe UI', Arial, sans-serif; background:var(--rosa-suave); color:var(--texto);
   }
   header{
-    background:#fff; padding:18px 24px; display:flex; align-items:center; justify-content:space-between;
+    background:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between;
+    gap:12px; flex-wrap:wrap;
     box-shadow:0 2px 8px rgba(0,0,0,0.06); position:sticky; top:0; z-index:10;
   }
-  header .marca{ display:flex; align-items:center; gap:12px; }
+  header .marca{ display:flex; align-items:center; gap:12px; min-width:0; }
   header .marca img{ width:44px; height:44px; border-radius:50%; object-fit:cover; box-shadow:0 2px 8px rgba(0,0,0,0.12); }
-  header h1{ color:var(--rosa); font-size:22px; margin:0; }
-  header p{ margin:0; font-size:12px; color:var(--gris); }
+  header h1{ color:var(--rosa); font-size:22px; margin:0; white-space:nowrap; }
+  header p{ margin:0; font-size:12px; color:var(--gris); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  @media (max-width:420px){
+    header h1{ font-size:18px; }
+    header .marca img{ width:36px; height:36px; }
+    #cart-btn{ padding:8px 12px; font-size:13px; }
+  }
   #cart-btn{
     background:var(--rosa); color:#fff; border:none; padding:10px 18px; border-radius:20px;
     font-weight:bold; cursor:pointer; font-size:14px;
   }
-  main{ max-width:1100px; margin:0 auto; padding:24px; }
-  .filtros{ display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap; }
-  .filtros select, .filtros input{
-    padding:8px 12px; border-radius:8px; border:1px solid #eaa; font-size:14px;
+  main{ width:min(1280px, 94%); margin:0 auto; padding:20px 0 32px; }
+  .filtros{
+    display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap;
+    background:#fff; padding:12px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04);
   }
+  .filtros select, .filtros input{
+    padding:9px 12px; border-radius:8px; border:1px solid #eecfe0; font-size:14px; flex:1; min-width:140px;
+  }
+  .filtros select{ flex:0 0 auto; }
   .grid{
-    display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:18px;
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(210px,1fr)); gap:16px;
+  }
+  @media (max-width:640px){
+    main{ width:92%; padding:16px 0 28px; }
+    .grid{ grid-template-columns:repeat(2, 1fr); gap:12px; }
+    .card{ padding:10px; }
+    .card h3{ font-size:14px; }
+    .card .precio{ font-size:16px; }
+    .card button{ font-size:12px; padding:8px; }
   }
   .card{
-    background:#fff; border-radius:14px; padding:16px; box-shadow:0 2px 10px rgba(0,0,0,0.05);
-    display:flex; flex-direction:column; gap:6px;
+    background:#fff; border-radius:14px; padding:14px; box-shadow:0 2px 10px rgba(0,0,0,0.05);
+    display:flex; flex-direction:column; gap:5px; transition:transform .15s, box-shadow .15s;
   }
+  .card:hover{ transform:translateY(-3px); box-shadow:0 8px 20px rgba(0,0,0,0.09); }
   .card-img-wrap{
-    width:100%; aspect-ratio:3/4; border-radius:10px; overflow:hidden;
-    background:linear-gradient(135deg,#fce7f3,#f6d9ea); margin-bottom:4px;
+    width:100%; aspect-ratio:4/5; border-radius:10px; overflow:hidden;
+    background:linear-gradient(135deg,#fce7f3,#f6d9ea); margin-bottom:2px;
     display:flex; align-items:center; justify-content:center;
   }
+
   .card-img-wrap img{ width:100%; height:100%; object-fit:cover; display:block; }
   .card .cat{ font-size:11px; color:var(--dorado); text-transform:uppercase; font-weight:bold; }
   .card h3{ margin:0; font-size:16px; }
@@ -242,12 +263,12 @@
 
 // Imagen de respaldo cuando la prenda aún no tiene foto cargada en la hoja de datos
 const IMG_PLACEHOLDER = "data:image/svg+xml;utf8," + encodeURIComponent(`
-<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 400'>
-  <rect width='300' height='400' fill='#fce7f3'/>
-  <path d='M150 90 L120 120 L100 110 L70 150 L90 165 L90 320 L210 320 L210 165 L230 150 L200 110 L180 120 Z'
-        fill='none' stroke='#c9a15a' stroke-width='6' stroke-linejoin='round'/>
-  <circle cx='150' cy='108' r='14' fill='none' stroke='#c9a15a' stroke-width='6'/>
-  <text x='150' y='360' font-family='Segoe UI, Arial' font-size='15' fill='#8a7f7f' text-anchor='middle'>Foto próximamente</text>
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 375'>
+  <rect width='300' height='375' fill='#fbeaf3'/>
+  <path d='M150 150 L128 173 L112 165 L88 196 L104 208 L104 320 L196 320 L196 208 L212 196 L188 165 L172 173 Z'
+        fill='none' stroke='#d8b078' stroke-width='5' stroke-linejoin='round' opacity='0.7'/>
+  <circle cx='150' cy='166' r='10' fill='none' stroke='#d8b078' stroke-width='5' opacity='0.7'/>
+  <text x='150' y='348' font-family='Segoe UI, Arial' font-size='13' fill='#a893a0' text-anchor='middle'>Foto próximamente</text>
 </svg>`);
 
 let productos = [];
