@@ -4,263 +4,288 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SOSIBÉ Boutique - Tienda</title>
+
+<!-- Tailwind CSS (CDN) -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Google Fonts: Playfair Display (serif, marca) + Inter (sans, textos) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          hueso: '#FDFBF7',
+          rosa: { DEFAULT: '#BE185D', suave: '#F7E4EC', oscuro: '#8F1247' },
+          dorado: '#D4AF37',
+          texto: '#2B2320',
+          gris: '#8A7F76'
+        },
+        fontFamily: {
+          serif: ['"Playfair Display"', 'serif'],
+          sans: ['"Inter"', 'sans-serif']
+        },
+        keyframes: {
+          shimmer: { '0%': { backgroundPosition: '-400px 0' }, '100%': { backgroundPosition: '400px 0' } },
+          wsppulse: { '0%,100%': { boxShadow: '0 0 0 0 rgba(37,211,102,0.35)' }, '50%': { boxShadow: '0 0 0 9px rgba(37,211,102,0)' } },
+          fadein: { from: { opacity: 0 }, to: { opacity: 1 } },
+          scalein: { from: { opacity: 0, transform: 'scale(0.96)' }, to: { opacity: 1, transform: 'scale(1)' } },
+          floatup: { from: { opacity: 0, transform: 'translateY(14px)' }, to: { opacity: 1, transform: 'translateY(0)' } }
+        },
+        animation: {
+          shimmer: 'shimmer 1.6s infinite linear',
+          wsppulse: 'wsppulse 2.4s infinite',
+          fadein: 'fadein .25s ease-out',
+          scalein: 'scalein .25s ease-out',
+          floatup: 'floatup .5s ease-out both'
+        }
+      }
+    }
+  };
+</script>
+
 <style>
-  :root{
-    --rosa:#ec4899; --rosa-suave:#fce7f3; --dorado:#c9a15a; --texto:#3a2f2f; --gris:#8a7f7f;
-  }
-  *{box-sizing:border-box;}
-  html, body{ width:100%; overflow-x:hidden; }
-  body{
-    margin:0; font-family:'Segoe UI', Arial, sans-serif; background:var(--rosa-suave); color:var(--texto);
-  }
-  header{
-    background:#fff; padding:14px 20px; display:flex; align-items:center; justify-content:space-between;
-    gap:12px; flex-wrap:wrap;
-    box-shadow:0 2px 8px rgba(0,0,0,0.06); position:sticky; top:0; z-index:10;
-  }
-  header .marca{ display:flex; align-items:center; gap:12px; min-width:0; }
-  header .marca img{ width:44px; height:44px; border-radius:50%; object-fit:cover; box-shadow:0 2px 8px rgba(0,0,0,0.12); }
-  header h1{ color:var(--rosa); font-size:22px; margin:0; white-space:nowrap; }
-  header p{ margin:0; font-size:12px; color:var(--gris); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  @media (max-width:420px){
-    header h1{ font-size:18px; }
-    header .marca img{ width:36px; height:36px; }
-    #cart-btn{ padding:8px 12px; font-size:13px; }
-  }
-  #cart-btn{
-    background:var(--rosa); color:#fff; border:none; padding:10px 18px; border-radius:20px;
-    font-weight:bold; cursor:pointer; font-size:14px;
-  }
-  main{ width:min(1280px, 94%); margin:0 auto; padding:20px 0 32px; }
-  .filtros{
-    display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap;
-    background:#fff; padding:12px; border-radius:12px; box-shadow:0 2px 8px rgba(0,0,0,0.04);
-  }
-  .filtros select, .filtros input{
-    padding:9px 12px; border-radius:8px; border:1px solid #eecfe0; font-size:14px; flex:1; min-width:140px;
-  }
-  .filtros select{ flex:0 0 auto; }
-  .grid{
-    display:grid; grid-template-columns:repeat(auto-fill, minmax(210px,1fr)); gap:16px;
-  }
-  @media (max-width:640px){
-    main{ width:92%; padding:16px 0 28px; }
-    .grid{ grid-template-columns:repeat(2, 1fr); gap:12px; }
-    .card{ padding:10px; }
-    .card h3{ font-size:14px; }
-    .card .precio{ font-size:16px; }
-    .card button{ font-size:12px; padding:8px; }
-  }
-  .card{
-    background:#fff; border-radius:14px; padding:14px; box-shadow:0 2px 10px rgba(0,0,0,0.05);
-    display:flex; flex-direction:column; gap:5px; transition:transform .15s, box-shadow .15s;
-  }
-  .card:hover{ transform:translateY(-3px); box-shadow:0 8px 20px rgba(0,0,0,0.09); }
-  .card-img-wrap{
-    width:100%; aspect-ratio:4/5; border-radius:10px; overflow:hidden;
-    background:linear-gradient(135deg,#fce7f3,#f6d9ea); margin-bottom:2px;
-    display:flex; align-items:center; justify-content:center;
+  html{ scroll-behavior:smooth; }
+  body{ font-family:'Inter', sans-serif; background:#FDFBF7; color:#2B2320; }
+  .font-serif{ font-family:'Playfair Display', serif; }
+
+  /* Miniaturas de galería: la clase "active" la controla JS (cambiarFotoPrincipal) */
+  .thumb{ opacity:.55; border:1.5px solid transparent; transition:opacity .15s, border-color .15s; cursor:pointer; }
+  .thumb.active{ opacity:1; border-color:#BE185D; }
+
+  /* Shimmer de carga de imagen */
+  .bg-shimmer{
+    background-image:linear-gradient(100deg, #f2ece4 20%, #fbf6ef 40%, #f2ece4 60%);
+    background-size:400px 100%;
   }
 
-  .card-img-wrap img{ width:100%; height:100%; object-fit:cover; display:block; }
-  .card .cat{ font-size:11px; color:var(--dorado); text-transform:uppercase; font-weight:bold; }
-  .card h3{ margin:0; font-size:16px; }
-  .card .detalles{ font-size:12px; color:var(--gris); }
-  .card .precio{ font-size:18px; font-weight:bold; color:var(--rosa); margin-top:auto; }
-  .card button{
-    background:var(--texto); color:#fff; border:none; padding:9px; border-radius:8px; cursor:pointer;
-    font-size:13px; margin-top:6px;
-  }
-  .card button:disabled{ background:#ccc; cursor:not-allowed; }
-  .card .btn-wsp-prod{
-    background:#25D366; display:flex; align-items:center; justify-content:center; gap:6px;
-  }
-  .stock-bajo{ color:#c0392b; font-size:11px; }
+  /* Panel de carrito: slide-in real (translate) en vez de display none/flex */
+  #cart-panel{ transform:translateX(100%); transition:transform .35s cubic-bezier(.4,0,.2,1); }
+  #cart-panel.abierto{ transform:translateX(0); }
+  #cart-overlay{ opacity:0; pointer-events:none; transition:opacity .3s ease; }
+  #cart-overlay.abierto{ opacity:1; pointer-events:auto; }
 
-  /* Galería de fotos por producto (miniaturas) */
-  .thumbs{ display:flex; gap:4px; margin-top:2px; flex-wrap:wrap; }
-  .thumb{
-    width:32px; height:32px; border-radius:6px; object-fit:cover; cursor:pointer;
-    border:1.5px solid transparent; opacity:.65;
-  }
-  .thumb.active{ border-color:var(--rosa); opacity:1; }
+  ::-webkit-scrollbar{ height:6px; width:6px; }
+  ::-webkit-scrollbar-thumb{ background:#e7cfda; border-radius:10px; }
 
-  /* Carrito lateral */
-  #cart-overlay{
-    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:20;
-  }
-  #cart-panel{
-    display:none;
-    position:fixed; top:0; right:0; width:360px; max-width:90vw; height:100%; background:#fff;
-    z-index:21; padding:20px; overflow-y:auto; box-shadow:-4px 0 20px rgba(0,0,0,0.15);
-    flex-direction:column;
-  }
-  #cart-panel h2{ color:var(--rosa); margin-top:0; }
-  .cart-item{ display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #f2e0ea; font-size:14px; }
-  .cart-item .qty{ display:flex; align-items:center; gap:6px; }
-  .cart-item .qty button{ width:24px; height:24px; border-radius:6px; border:1px solid #ddd; background:#fff; cursor:pointer; }
-  .close-btn{ background:none; border:none; font-size:22px; cursor:pointer; color:var(--gris); align-self:flex-end; }
-  .total-line{ display:flex; justify-content:space-between; font-weight:bold; font-size:18px; margin:16px 0; }
-  .btn-primary{
-    background:var(--rosa); color:#fff; border:none; padding:12px; border-radius:10px; font-size:15px;
-    cursor:pointer; font-weight:bold; width:100%;
-  }
-  .btn-primary:disabled{ background:#ccc; }
-  .btn-secondary{
-    background:#fff; color:var(--texto); border:1px solid #ddd; padding:12px; border-radius:10px;
-    font-size:15px; cursor:pointer; font-weight:bold;
-  }
-  .fila-botones{ display:flex; gap:10px; margin-top:14px; }
-  .fila-botones .btn-secondary{ flex:1; }
-  .fila-botones .btn-primary{ flex:2; }
-  .btn-wsp-full{
-    background:#25D366; color:#fff; border:none; padding:12px; border-radius:10px; font-size:15px;
-    cursor:pointer; font-weight:bold; width:100%; margin-top:10px; display:flex; align-items:center;
-    justify-content:center; gap:8px;
-  }
-
-  /* Modal checkout */
-  .modal-overlay{
-    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:30;
-    align-items:center; justify-content:center; padding:16px;
-  }
-  .modal{
-    background:#fff; border-radius:14px; padding:24px; max-width:440px; width:100%; max-height:90vh; overflow-y:auto;
-  }
-  .modal h2{ color:var(--rosa); margin-top:0; }
-  .modal label{ display:block; font-size:13px; margin:10px 0 4px; font-weight:600; }
-  .modal input, .modal textarea{
-    width:100%; padding:9px; border-radius:8px; border:1px solid #ddd; font-size:14px;
-  }
-  .aviso{ background:#fff8e6; border:1px solid #f0d98c; padding:12px; border-radius:10px; font-size:13px; margin:14px 0; }
-  .aviso b{ color:#a3760b; }
-  #estado-msg{ font-size:14px; margin-top:10px; padding:10px; border-radius:8px; }
-  .ok{ background:#e6f7ee; color:#1b7a43; }
-  .err{ background:#fdeaea; color:#b3261e; }
-  footer{ text-align:center; padding:24px; font-size:12px; color:var(--gris); }
-
-  .gracias-block{ text-align:center; margin-top:10px; }
-  .gracias-block .emoji{ font-size:44px; }
-  .gracias-block h3{ color:var(--rosa); margin:6px 0; }
-  .gracias-block p{ color:var(--gris); font-size:13px; margin-bottom:16px; }
-
-  /* Botón flotante de WhatsApp */
-  #whatsapp-flotante{
-    position:fixed; right:20px; bottom:20px; z-index:30;
-    width:58px; height:58px; border-radius:50%;
-    background:#25D366; box-shadow:0 4px 14px rgba(0,0,0,0.25);
-    display:none; align-items:center; justify-content:center;
-    text-decoration:none; transition:transform .15s;
-  }
-  #whatsapp-flotante:hover{ transform:scale(1.08); }
-  #whatsapp-flotante svg{ width:30px; height:30px; }
-  #whatsapp-flotante .globo{
-    position:absolute; right:70px; bottom:6px; background:#fff; color:var(--texto);
-    padding:8px 12px; border-radius:10px; font-size:12.5px; white-space:nowrap;
-    box-shadow:0 2px 10px rgba(0,0,0,0.12); opacity:0; pointer-events:none; transition:opacity .2s;
-  }
-  #whatsapp-flotante:hover .globo{ opacity:1; }
-  @media (max-width:600px){
-    #whatsapp-flotante{ right:14px; bottom:14px; width:52px; height:52px; }
-    #whatsapp-flotante .globo{ display:none; }
-  }
+  .cat-chip.activo{ background:#BE185D; color:#fff; border-color:#BE185D; }
+  .cat-chip.activo .cat-chip-dot{ background:#D4AF37; }
 </style>
 </head>
-<body>
 
-<a id="whatsapp-flotante" href="#" target="_blank" rel="noopener">
-  <span class="globo">¿Dudas? Escríbenos</span>
-  <svg viewBox="0 0 32 32" fill="#fff"><path d="M16 3C9.4 3 4 8.4 4 15c0 2.4.7 4.6 1.9 6.5L4 29l7.7-1.9C13.5 28 14.7 28.3 16 28.3c6.6 0 12-5.4 12-12S22.6 3 16 3zm0 22c-1.3 0-2.6-.3-3.7-.9l-.3-.2-4.4 1.1 1.1-4.3-.2-.3C7.4 18.9 7 17 7 15 7 9.9 11 5.9 16 5.9S25 9.9 25 15s-4 10-9 10zm5.4-7.5c-.3-.1-1.7-.8-2-1-.3-.1-.5-.1-.7.1-.2.3-.7 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.3-.4.1-.2 0-.4 0-.5 0-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1.1 2.8 1.2 3c.1.2 2.2 3.4 5.4 4.7.8.3 1.4.5 1.8.7.8.2 1.5.2 2 .1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.2-.3-.2-.6-.4z"/></svg>
+<body class="bg-hueso text-texto antialiased">
+
+<!-- ===================== BOTÓN FLOTANTE WHATSAPP ===================== -->
+<a id="whatsapp-flotante" href="#" target="_blank" rel="noopener"
+   style="display:none;"
+   class="fixed right-5 bottom-5 md:right-6 md:bottom-6 z-30 w-14 h-14 rounded-full bg-[#25D366] shadow-lg items-center justify-center animate-wsppulse hover:scale-110 transition-transform">
+  <span class="globo hidden md:block absolute right-[68px] bottom-2 bg-white text-texto text-xs font-medium px-3 py-2 rounded-lg shadow-md whitespace-nowrap opacity-0 pointer-events-none transition-opacity">¿Dudas? Escríbenos</span>
+  <svg viewBox="0 0 32 32" fill="#fff" class="w-7 h-7"><path d="M16 3C9.4 3 4 8.4 4 15c0 2.4.7 4.6 1.9 6.5L4 29l7.7-1.9C13.5 28 14.7 28.3 16 28.3c6.6 0 12-5.4 12-12S22.6 3 16 3zm0 22c-1.3 0-2.6-.3-3.7-.9l-.3-.2-4.4 1.1 1.1-4.3-.2-.3C7.4 18.9 7 17 7 15 7 9.9 11 5.9 16 5.9S25 9.9 25 15s-4 10-9 10zm5.4-7.5c-.3-.1-1.7-.8-2-1-.3-.1-.5-.1-.7.1-.2.3-.7 1-.9 1.2-.2.2-.3.2-.6.1-.3-.1-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6.1-.1.3-.3.4-.5.1-.1.2-.3.3-.4.1-.2 0-.4 0-.5 0-.1-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.4s1.1 2.8 1.2 3c.1.2 2.2 3.4 5.4 4.7.8.3 1.4.5 1.8.7.8.2 1.5.2 2 .1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.2-.3-.2-.6-.4z"/></svg>
 </a>
 
-<header>
-  <div class="marca">
-    <img src="assets/logo-sosibe.jpg" alt="SOSIBÉ Boutique">
-    <div>
-      <h1>SOSIBÉ Boutique</h1>
-      <p>Elegancia · Estilo · Confianza</p>
+<style>
+  #whatsapp-flotante:hover .globo{ opacity:1; }
+</style>
+
+<!-- ===================== HEADER ===================== -->
+<header class="bg-hueso/90 backdrop-blur-md sticky top-0 z-20 border-b border-rosa/10">
+  <div class="max-w-7xl mx-auto px-5 md:px-8 py-3.5 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-3 min-w-0">
+      <img src="assets/logo-sosibe.jpg" alt="SOSIBÉ Boutique" class="w-10 h-10 md:w-11 md:h-11 rounded-full object-cover shadow-sm ring-1 ring-dorado/40">
+      <div class="min-w-0">
+        <h1 class="font-serif text-xl md:text-2xl tracking-wide text-rosa leading-none">SOSIBÉ</h1>
+        <p class="text-[11px] md:text-xs text-gris tracking-[0.15em] uppercase truncate">Elegancia · Estilo · Confianza</p>
+      </div>
     </div>
+    <button id="cart-btn" onclick="abrirCarrito()"
+      class="flex items-center gap-2 bg-texto hover:bg-rosa text-white px-4 md:px-5 py-2.5 rounded-full text-sm font-medium transition-colors shrink-0">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-4.5 h-4.5 w-[18px] h-[18px]"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      <span>Carrito</span>
+      <span id="cart-count" class="bg-dorado text-texto text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">0</span>
+    </button>
   </div>
-  <button id="cart-btn" onclick="abrirCarrito()">🛍️ Carrito (<span id="cart-count">0</span>)</button>
 </header>
 
-<main>
-  <div class="filtros">
-    <input type="text" id="buscador" placeholder="Buscar producto..." oninput="renderProductos()">
-    <select id="filtroCategoria" onchange="renderProductos()"><option value="">Todas las categorías</option></select>
+<!-- ===================== HERO ===================== -->
+<section id="hero-section" class="relative min-h-[60vh] flex flex-col items-center justify-center text-center px-6 overflow-hidden bg-gradient-to-b from-rosa-suave/60 via-hueso to-hueso">
+
+  <!-- Aquí se inserta automáticamente tu foto o video de fondo (ver HERO_MEDIA en el script) -->
+  <div id="hero-media" class="absolute inset-0 -z-20"></div>
+
+  <!-- Overlay oscuro: se activa solo si hay foto/video, para que el texto siempre contraste bien -->
+  <div id="hero-overlay" class="hidden absolute inset-0 -z-10 bg-gradient-to-b from-black/55 via-black/30 to-black/25"></div>
+
+  <!-- Decoración de fondo (solo visible cuando NO hay foto/video) -->
+  <div id="hero-decor" class="absolute inset-0 -z-10 opacity-[0.06] bg-[radial-gradient(circle_at_20%_20%,#BE185D,transparent_45%),radial-gradient(circle_at_80%_60%,#D4AF37,transparent_40%)]"></div>
+
+  <div id="hero-content" class="relative z-10 flex flex-col items-center text-texto">
+    <p class="hero-eyebrow uppercase tracking-[0.35em] text-xs md:text-sm text-dorado font-semibold mb-4 animate-floatup">Colección actual</p>
+    <h2 class="font-serif italic text-4xl sm:text-5xl md:text-7xl leading-[1.05] max-w-3xl animate-floatup" style="animation-delay:.08s">
+      Prendas que hablan de ti
+    </h2>
+    <p class="hero-subtitulo mt-5 text-gris max-w-md md:max-w-lg text-sm md:text-base animate-floatup" style="animation-delay:.16s">
+      Piezas cuidadosamente seleccionadas para vestir con elegancia, estilo y confianza en cada ocasión.
+    </p>
+    <a href="#catalogo"
+       class="mt-8 inline-flex items-center gap-2 bg-rosa hover:bg-rosa-oscuro text-white px-8 py-3.5 rounded-full text-sm font-medium tracking-wide transition-colors animate-floatup" style="animation-delay:.24s">
+      Explorar colección
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+    </a>
   </div>
-  <div id="grid" class="grid"><p>Cargando productos...</p></div>
+</section>
+
+<main class="max-w-7xl mx-auto px-5 md:px-8 pb-16">
+
+  <!-- ===================== CATEGORÍAS RÁPIDAS ===================== -->
+  <div id="categorias-rapidas" class="flex items-center gap-3 overflow-x-auto pb-2 mb-8 -mx-1 px-1"></div>
+
+  <!-- ===================== FILTROS ===================== -->
+  <div id="catalogo" class="scroll-mt-24 flex flex-col sm:flex-row gap-3 bg-white/70 border border-rosa/10 rounded-2xl p-3 mb-7">
+    <div class="relative flex-1">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-4 h-4 text-gris absolute left-3.5 top-1/2 -translate-y-1/2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.4-3.4"/></svg>
+      <input type="text" id="buscador" placeholder="Buscar producto..." oninput="renderProductos()"
+        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-rosa/15 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-rosa/30">
+    </div>
+    <select id="filtroCategoria" onchange="renderProductos()"
+      class="px-4 py-2.5 rounded-xl border border-rosa/15 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-rosa/30">
+      <option value="">Todas las categorías</option>
+    </select>
+  </div>
+
+  <!-- ===================== GRID DE PRODUCTOS ===================== -->
+  <div id="grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+    <p class="col-span-full text-center text-gris py-10">Cargando productos...</p>
+  </div>
 </main>
 
-<footer>© SOSIBÉ Boutique — Pagos por consignación bancaria, verificados manualmente.</footer>
+<!-- ===================== MÓDULO DE CONFIANZA ===================== -->
+<section class="bg-white border-t border-rosa/10">
+  <div class="max-w-5xl mx-auto px-6 py-14 grid grid-cols-1 md:grid-cols-3 gap-10 text-center">
+    <div class="flex flex-col items-center gap-3">
+      <div class="w-12 h-12 rounded-full bg-rosa-suave flex items-center justify-center text-rosa">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="w-5.5 h-5.5 w-[22px] h-[22px]"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+      </div>
+      <h3 class="font-serif text-lg">Elige tus prendas</h3>
+      <p class="text-sm text-gris max-w-[220px]">Explora el catálogo y agrega tus favoritas al carrito.</p>
+    </div>
+    <div class="flex flex-col items-center gap-3">
+      <div class="w-12 h-12 rounded-full bg-rosa-suave flex items-center justify-center text-rosa">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="w-[22px] h-[22px]"><path d="M12 2 4 6v6c0 5 3.4 8.9 8 10 4.6-1.1 8-5 8-10V6l-8-4Z"/><path d="m9 12 2 2 4-4"/></svg>
+      </div>
+      <h3 class="font-serif text-lg">Transfiere de forma segura</h3>
+      <p class="text-sm text-gris max-w-[220px]">Realiza tu consignación bancaria y confírmala con nosotros.</p>
+    </div>
+    <div class="flex flex-col items-center gap-3">
+      <div class="w-12 h-12 rounded-full bg-rosa-suave flex items-center justify-center text-rosa">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="w-[22px] h-[22px]"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>
+      </div>
+      <h3 class="font-serif text-lg">Sube tu comprobante</h3>
+      <p class="text-sm text-gris max-w-[220px]">Envíalo por la web o avísanos directo por WhatsApp.</p>
+    </div>
+  </div>
+</section>
 
-<!-- CARRITO -->
-<div id="cart-overlay" onclick="cerrarCarrito()"></div>
-<div id="cart-panel">
-  <button class="close-btn" onclick="cerrarCarrito()">&times;</button>
-  <h2>Tu carrito</h2>
-  <div id="cart-items"><p style="color:#999;">Tu carrito está vacío</p></div>
-  <div class="total-line"><span>Total</span><span id="cart-total">$0</span></div>
-  <button class="btn-primary" id="checkout-btn" onclick="abrirCheckout()" disabled>Continuar con la compra</button>
+<footer class="text-center py-8 text-xs text-gris">© SOSIBÉ Boutique — Pagos por consignación bancaria, verificados manualmente.</footer>
+
+<!-- ===================== CARRITO LATERAL ===================== -->
+<div id="cart-overlay" onclick="cerrarCarrito()" class="fixed inset-0 bg-black/40 z-40"></div>
+<div id="cart-panel" class="fixed top-0 right-0 w-[380px] max-w-[90vw] h-full bg-white z-50 flex flex-col shadow-2xl">
+  <div class="flex items-center justify-between px-6 pt-6 pb-2">
+    <h2 class="font-serif text-2xl text-rosa">Tu carrito</h2>
+    <button class="text-gris hover:text-texto transition-colors" onclick="cerrarCarrito()">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-6 h-6"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+  </div>
+  <div id="cart-items" class="flex-1 overflow-y-auto px-6"><p class="text-gris text-sm py-6">Tu carrito está vacío</p></div>
+  <div class="px-6 pt-4 pb-6 border-t border-rosa/10">
+    <div class="flex justify-between items-baseline font-semibold text-lg mb-4">
+      <span>Total</span><span id="cart-total" class="font-serif text-rosa text-xl">$0</span>
+    </div>
+    <button id="checkout-btn" onclick="abrirCheckout()" disabled
+      class="w-full bg-rosa hover:bg-rosa-oscuro disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-medium py-3.5 rounded-full transition-colors">
+      Continuar con la compra
+    </button>
+  </div>
 </div>
 
-<!-- MODAL CHECKOUT -->
-<div class="modal-overlay" id="modal-checkout">
-  <div class="modal">
-    <h2>Datos de envío</h2>
-    <label>Nombre completo *</label>
-    <input type="text" id="c-nombre" required>
-    <label>Teléfono / WhatsApp *</label>
-    <input type="text" id="c-telefono" required>
-    <label>Documento</label>
-    <input type="text" id="c-documento">
-    <label>Correo</label>
-    <input type="email" id="c-correo">
-    <label>Dirección</label>
-    <input type="text" id="c-direccion">
-    <label>Ciudad</label>
-    <input type="text" id="c-ciudad">
-    <label>Notas del pedido</label>
-    <textarea id="c-obs" rows="2"></textarea>
+<!-- ===================== MODAL CHECKOUT ===================== -->
+<div class="modal-overlay hidden fixed inset-0 bg-black/50 z-[60] items-center justify-center p-4" id="modal-checkout">
+  <div class="bg-white rounded-2xl p-6 md:p-8 max-w-[460px] w-full max-h-[90vh] overflow-y-auto animate-scalein">
+    <h2 class="font-serif text-2xl text-rosa mb-1">Datos de envío</h2>
+    <p class="text-xs text-gris mb-4">Necesitamos estos datos para procesar y enviar tu pedido.</p>
 
-    <div class="aviso">
-      <b>Pago por consignación:</b> al confirmar tu pedido te mostraremos los datos bancarios.
+    <label class="block text-xs font-semibold mt-3 mb-1 text-texto/80">Nombre completo *</label>
+    <input type="text" id="c-nombre" required class="w-full px-3.5 py-2.5 rounded-lg border border-rosa/15 text-sm focus:outline-none focus:ring-2 focus:ring-rosa/30">
+
+    <label class="block text-xs font-semibold mt-3 mb-1 text-texto/80">Teléfono / WhatsApp *</label>
+    <input type="text" id="c-telefono" required class="w-full px-3.5 py-2.5 rounded-lg border border-rosa/15 text-sm focus:outline-none focus:ring-2 focus:ring-rosa/30">
+
+    <label class="block text-xs font-semibold mt-3 mb-1 text-texto/80">Documento</label>
+    <input type="text" id="c-documento" class="w-full px-3.5 py-2.5 rounded-lg border border-rosa/15 text-sm focus:outline-none focus:ring-2 focus:ring-rosa/30">
+
+    <label class="block text-xs font-semibold mt-3 mb-1 text-texto/80">Correo</label>
+    <input type="email" id="c-correo" class="w-full px-3.5 py-2.5 rounded-lg border border-rosa/15 text-sm focus:outline-none focus:ring-2 focus:ring-rosa/30">
+
+    <label class="block text-xs font-semibold mt-3 mb-1 text-texto/80">Dirección</label>
+    <input type="text" id="c-direccion" class="w-full px-3.5 py-2.5 rounded-lg border border-rosa/15 text-sm focus:outline-none focus:ring-2 focus:ring-rosa/30">
+
+    <label class="block text-xs font-semibold mt-3 mb-1 text-texto/80">Ciudad</label>
+    <input type="text" id="c-ciudad" class="w-full px-3.5 py-2.5 rounded-lg border border-rosa/15 text-sm focus:outline-none focus:ring-2 focus:ring-rosa/30">
+
+    <label class="block text-xs font-semibold mt-3 mb-1 text-texto/80">Notas del pedido</label>
+    <textarea id="c-obs" rows="2" class="w-full px-3.5 py-2.5 rounded-lg border border-rosa/15 text-sm focus:outline-none focus:ring-2 focus:ring-rosa/30"></textarea>
+
+    <div class="bg-dorado/10 border border-dorado/30 text-[13px] rounded-xl p-3.5 mt-4">
+      <b class="text-dorado">Pago por consignación:</b> al confirmar tu pedido te mostraremos los datos bancarios.
       Luego debes subir la foto del comprobante para que validemos tu pago.
     </div>
 
-    <div class="fila-botones">
-      <button class="btn-secondary" onclick="cerrarCheckout()">Cancelar</button>
-      <button class="btn-primary" id="btn-crear-pedido" onclick="crearPedido()">Confirmar pedido</button>
+    <div class="flex gap-3 mt-4">
+      <button onclick="cerrarCheckout()" class="flex-1 border border-rosa/20 text-texto font-medium py-3 rounded-full hover:bg-rosa-suave/40 transition-colors">Cancelar</button>
+      <button id="btn-crear-pedido" onclick="crearPedido()" class="flex-[2] bg-rosa hover:bg-rosa-oscuro text-white font-medium py-3 rounded-full transition-colors">Confirmar pedido</button>
     </div>
-    <div id="estado-msg"></div>
+    <div id="estado-msg" class="text-sm mt-3"></div>
   </div>
 </div>
 
-<!-- MODAL COMPROBANTE -->
-<div class="modal-overlay" id="modal-comprobante">
-  <div class="modal">
+<!-- ===================== MODAL COMPROBANTE ===================== -->
+<div class="modal-overlay hidden fixed inset-0 bg-black/50 z-[60] items-center justify-center p-4" id="modal-comprobante">
+  <div class="bg-white rounded-2xl p-6 md:p-8 max-w-[460px] w-full max-h-[90vh] overflow-y-auto animate-scalein">
     <div id="comprobante-form">
-      <h2 id="pedido-titulo">Pedido creado</h2>
-      <p>Realiza la consignación a la siguiente cuenta y sube tu comprobante:</p>
-      <div class="aviso">
-        <b>Banco:</b> [TU BANCO AQUÍ]<br>
-        <b>Cuenta:</b> [NÚMERO DE CUENTA]<br>
-        <b>Titular:</b> [NOMBRE TITULAR]<br>
-        <b>Valor a pagar:</b> <span id="pedido-total"></span>
+      <h2 id="pedido-titulo" class="font-serif text-2xl text-rosa mb-1">Pedido creado</h2>
+      <p class="text-sm text-gris mb-3">Realiza la consignación a la siguiente cuenta y sube tu comprobante:</p>
+      <div class="bg-dorado/10 border border-dorado/30 text-[13px] rounded-xl p-3.5 leading-relaxed">
+        <b class="text-dorado">Banco:</b> [TU BANCO AQUÍ]<br>
+        <b class="text-dorado">Cuenta:</b> [NÚMERO DE CUENTA]<br>
+        <b class="text-dorado">Titular:</b> [NOMBRE TITULAR]<br>
+        <b class="text-dorado">Valor a pagar:</b> <span id="pedido-total"></span>
       </div>
-      <label>Foto o captura del comprobante *</label>
-      <input type="file" id="comprobante-file" accept="image/*,.pdf">
-      <button class="btn-primary" id="btn-subir-comprobante" onclick="subirComprobante()" style="margin-top:14px;">Enviar comprobante</button>
-      <button class="btn-wsp-full" onclick="enviarPedidoWhatsapp()">💬 Avisar mi pedido por WhatsApp</button>
-      <div id="estado-comprobante"></div>
+      <label class="block text-xs font-semibold mt-4 mb-1 text-texto/80">Foto o captura del comprobante *</label>
+      <input type="file" id="comprobante-file" accept="image/*,.pdf" class="w-full text-sm border border-rosa/15 rounded-lg p-2">
+      <button id="btn-subir-comprobante" onclick="subirComprobante()"
+        class="w-full bg-rosa hover:bg-rosa-oscuro text-white font-medium py-3 rounded-full mt-4 transition-colors">Enviar comprobante</button>
+      <button onclick="enviarPedidoWhatsapp()"
+        class="w-full bg-[#25D366] hover:brightness-95 text-white font-medium py-3 rounded-full mt-2.5 flex items-center justify-center gap-2 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path d="M12 2C6.5 2 2 6.5 2 12c0 1.9.5 3.6 1.5 5.2L2 22l4.9-1.5A9.9 9.9 0 0 0 12 22c5.5 0 10-4.5 10-10S17.5 2 12 2z" opacity=".18"/><path d="M16.7 13.6c-.3-.1-1.6-.8-1.8-.9-.2-.1-.4-.1-.6.1s-.7.9-.9 1-.4.2-.7.1c-.3-.2-1.2-.5-2.3-1.5-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.4-.5c.1-.1.2-.3.2-.5s0-.4-.1-.5c-.1-.1-.6-1.5-.8-2.1-.2-.5-.4-.5-.6-.5h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.3 0 1.4 1 2.7 1.1 2.9.1.2 2.1 3.2 5.1 4.4.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.6-.7 1.9-1.3.2-.6.2-1.1.2-1.3-.1-.1-.3-.2-.5-.3z"/></svg>
+        Avisar mi pedido por WhatsApp
+      </button>
+      <div id="estado-comprobante" class="text-sm mt-3"></div>
     </div>
 
-    <div class="gracias-block" id="gracias-block" style="display:none;">
-      <div class="emoji">🎉</div>
-      <h3>¡Gracias por tu compra!</h3>
-      <p>Ya recibimos tu comprobante. Te contactaremos muy pronto para confirmar tu pago y coordinar el envío.</p>
-      <button class="btn-wsp-full" onclick="enviarPedidoWhatsapp()">💬 Escribir por WhatsApp</button>
-      <button class="btn-primary" style="margin-top:10px;" onclick="volverATienda()">Volver a la tienda</button>
+    <div class="text-center mt-2" id="gracias-block" style="display:none;">
+      <div class="w-14 h-14 mx-auto rounded-full bg-dorado/15 flex items-center justify-center text-dorado">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="w-7 h-7"><path d="M20 6 9 17l-5-5"/></svg>
+      </div>
+      <h3 class="font-serif text-2xl text-rosa mt-3">¡Gracias por tu compra!</h3>
+      <p class="text-gris text-sm mb-5 mt-1">Ya recibimos tu comprobante. Te contactaremos muy pronto para confirmar tu pago y coordinar el envío.</p>
+      <button onclick="enviarPedidoWhatsapp()"
+        class="w-full bg-[#25D366] hover:brightness-95 text-white font-medium py-3 rounded-full flex items-center justify-center gap-2 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4"><path d="M16.7 13.6c-.3-.1-1.6-.8-1.8-.9-.2-.1-.4-.1-.6.1s-.7.9-.9 1-.4.2-.7.1c-.3-.2-1.2-.5-2.3-1.5-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.4-.5c.1-.1.2-.3.2-.5s0-.4-.1-.5c-.1-.1-.6-1.5-.8-2.1-.2-.5-.4-.5-.6-.5h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.3 0 1.4 1 2.7 1.1 2.9.1.2 2.1 3.2 5.1 4.4.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.6-.7 1.9-1.3.2-.6.2-1.1.2-1.3-.1-.1-.3-.2-.5-.3zM12 2C6.5 2 2 6.5 2 12c0 1.9.5 3.6 1.5 5.2L2 22l4.9-1.5A9.9 9.9 0 0 0 12 22c5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3.3 1 1-3.2-.2-.3A8 8 0 1 1 20 12a8 8 0 0 1-8 8z"/></svg>
+        Escribir por WhatsApp
+      </button>
+      <button class="w-full border border-rosa/20 text-texto font-medium py-3 rounded-full mt-2.5 hover:bg-rosa-suave/40 transition-colors" onclick="volverATienda()">Volver a la tienda</button>
     </div>
   </div>
 </div>
@@ -269,6 +294,50 @@
 /* ======= CONFIGURA ESTO ======= */
     const API_URL = 'https://script.google.com/macros/s/AKfycbwF0T4dFM_SbfCxq6dBBSdQBL_xP2R64RZFJW-ly0AGiEWuRvVrIHXV7AQ2WrchaT_W/exec';
 /* =============================== */
+
+/* ======= FOTO O VIDEO DE PORTADA DEL HERO =======
+   1) Sube tu archivo a la misma carpeta del sitio (o a una carpeta "assets/").
+   2) Escribe aquí la ruta o URL en "url".
+   3) Si es un video, cambia "tipo" a 'video' (se reproduce en loop, sin sonido y sin controles).
+   Si dejas "url" vacío (''), el Hero se queda con el degradado rosa/dorado actual.
+================================================== */
+const HERO_MEDIA = {
+  tipo: 'imagen',            // 'imagen' o 'video'
+  url: ''                    // ej: 'assets/hero-sosibe.jpg'  o  'assets/hero-sosibe.mp4'
+};
+
+function configurarHeroMedia() {
+  if (!HERO_MEDIA.url) return; // sin foto/video: se conserva el fondo degradado
+
+  const contenedor = document.getElementById('hero-media');
+  const overlay = document.getElementById('hero-overlay');
+  const decor = document.getElementById('hero-decor');
+  const contenido = document.getElementById('hero-content');
+
+  let media;
+  if (HERO_MEDIA.tipo === 'video') {
+    media = document.createElement('video');
+    media.src = HERO_MEDIA.url;
+    media.autoplay = true;
+    media.muted = true;
+    media.loop = true;
+    media.playsInline = true;
+  } else {
+    media = document.createElement('img');
+    media.src = HERO_MEDIA.url;
+    media.alt = 'SOSIBÉ Boutique';
+  }
+  media.className = 'w-full h-full object-cover';
+  contenedor.appendChild(media);
+
+  // Activa el overlay oscuro y pasa el texto a blanco para que siempre contraste bien
+  overlay.classList.remove('hidden');
+  decor.classList.add('hidden');
+  contenido.classList.remove('text-texto');
+  contenido.classList.add('text-white');
+  contenido.querySelector('.hero-subtitulo')?.classList.remove('text-gris');
+  contenido.querySelector('.hero-subtitulo')?.classList.add('text-white/85');
+}
 
 // Imagen de respaldo cuando la prenda aún no tiene foto cargada en la hoja de datos
 const IMG_PLACEHOLDER = "data:image/svg+xml;utf8," + encodeURIComponent(`
@@ -315,10 +384,32 @@ async function cargarProductos() {
       opt.value = c; opt.textContent = c;
       select.appendChild(opt);
     });
+    renderCategoriasRapidas(categorias);
     renderProductos();
   } catch (e) {
-    document.getElementById("grid").innerHTML = "<p>No se pudo cargar el catálogo. Intenta más tarde.</p>";
+    document.getElementById("grid").innerHTML = "<p class='col-span-full text-center text-gris py-10'>No se pudo cargar el catálogo. Intenta más tarde.</p>";
   }
+}
+
+// NUEVO: fila de categorías rápidas (no afecta la lógica de negocio, solo UI)
+function renderCategoriasRapidas(categorias) {
+  const cont = document.getElementById("categorias-rapidas");
+  if (!cont || categorias.length === 0) return;
+
+  const chip = (label, valor, activo) => `
+    <button type="button" onclick="filtrarPorCategoriaRapida('${valor.replace(/'/g,"\\'")}')"
+      class="cat-chip ${activo ? 'activo' : ''} shrink-0 flex items-center gap-2 border border-rosa/20 bg-white text-texto text-sm px-4 py-2 rounded-full transition-colors hover:border-rosa/50">
+      <span class="cat-chip-dot w-1.5 h-1.5 rounded-full bg-rosa/40"></span>${label}
+    </button>`;
+
+  cont.innerHTML = chip('Todas', '', true) + categorias.map(c => chip(c, c, false)).join('');
+}
+
+function filtrarPorCategoriaRapida(valor) {
+  document.getElementById('filtroCategoria').value = valor;
+  document.querySelectorAll('#categorias-rapidas .cat-chip').forEach(el => el.classList.remove('activo'));
+  event.currentTarget.classList.add('activo');
+  renderProductos();
 }
 
 function renderProductos() {
@@ -332,27 +423,44 @@ function renderProductos() {
   );
 
   if (filtrados.length === 0) {
-    grid.innerHTML = "<p>No hay productos que coincidan con tu búsqueda.</p>";
+    grid.innerHTML = "<p class='col-span-full text-center text-gris py-10'>No hay productos que coincidan con tu búsqueda.</p>";
     return;
   }
 
   grid.innerHTML = filtrados.map(p => `
-    <div class="card">
-      <div class="card-img-wrap">
+    <div class="group bg-white rounded-2xl p-3 flex flex-col shadow-sm hover:shadow-xl transition-shadow duration-300">
+      <div class="relative w-full aspect-[4/5] rounded-xl overflow-hidden bg-shimmer animate-shimmer">
         <img id="img-${p.codigo}" src="${(p.fotos && p.fotos[0]) ? p.fotos[0] : IMG_PLACEHOLDER}" alt="${p.nombre}" loading="lazy"
-             onerror="this.onerror=null;this.src='${IMG_PLACEHOLDER}';">
+             class="w-full h-full object-cover opacity-0 transition-all duration-500 group-hover:scale-105"
+             onload="this.style.opacity=1" onerror="this.onerror=null;this.src='${IMG_PLACEHOLDER}';this.style.opacity=1;">
+
+        ${p.stock <= 3 ? `
+        <span class="absolute top-2.5 left-2.5 bg-white/95 backdrop-blur text-rosa text-[10px] font-semibold tracking-wide uppercase px-2.5 py-1 rounded-full shadow-sm">
+          Últimas ${p.stock}
+        </span>` : ''}
+
+        <div class="absolute inset-x-2 bottom-2 flex flex-col gap-1.5 opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+          <button onclick='agregarAlCarrito(${JSON.stringify(p)})'
+            class="bg-texto/90 backdrop-blur text-white text-xs font-medium py-2 rounded-lg hover:bg-rosa transition-colors">Agregar al carrito</button>
+          <button class="btn-wsp-prod bg-[#25D366]/95 backdrop-blur text-white text-xs font-medium py-2 rounded-lg flex items-center justify-center gap-1.5 hover:brightness-95 transition"
+            onclick='preguntarWhatsapp(${JSON.stringify(p)})'>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5"><path d="M16.7 13.6c-.3-.1-1.6-.8-1.8-.9-.2-.1-.4-.1-.6.1s-.7.9-.9 1-.4.2-.7.1c-.3-.2-1.2-.5-2.3-1.5-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.4-.5c.1-.1.2-.3.2-.5s0-.4-.1-.5c-.1-.1-.6-1.5-.8-2.1-.2-.5-.4-.5-.6-.5h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.3 0 1.4 1 2.7 1.1 2.9.1.2 2.1 3.2 5.1 4.4.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.6-.7 1.9-1.3.2-.6.2-1.1.2-1.3-.1-.1-.3-.2-.5-.3zM12 2C6.5 2 2 6.5 2 12c0 1.9.5 3.6 1.5 5.2L2 22l4.9-1.5A9.9 9.9 0 0 0 12 22c5.5 0 10-4.5 10-10S17.5 2 12 2zm0 18c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3.3 1 1-3.2-.2-.3A8 8 0 1 1 20 12a8 8 0 0 1-8 8z"/></svg>
+            Preguntar
+          </button>
+        </div>
       </div>
+
       ${p.fotos && p.fotos.length > 1 ? `
-      <div class="thumbs">
-        ${p.fotos.map((url, idx) => `<img src="${url}" class="thumb${idx===0?' active':''}" onclick="cambiarFotoPrincipal('${p.codigo}','${url}', this)">`).join('')}
+      <div class="thumbs flex gap-1.5 mt-2 flex-wrap">
+        ${p.fotos.map((url, idx) => `<img src="${url}" class="thumb${idx===0?' active':''} w-7 h-7 rounded-md object-cover" onclick="cambiarFotoPrincipal('${p.codigo}','${url}', this)">`).join('')}
       </div>` : ''}
-      <div class="cat">${p.categoria || ''}</div>
-      <h3>${p.nombre}</h3>
-      <div class="detalles">${[p.talla, p.color, p.genero].filter(Boolean).join(' · ')}</div>
-      <div class="detalles">${p.stock <= 3 ? '<span class="stock-bajo">¡Últimas ' + p.stock + ' unidades!</span>' : 'Disponible'}</div>
-      <div class="precio">$${Number(p.precio).toLocaleString('es-CO')}</div>
-      <button onclick='agregarAlCarrito(${JSON.stringify(p)})'>Agregar al carrito</button>
-      <button class="btn-wsp-prod" onclick='preguntarWhatsapp(${JSON.stringify(p)})'>💬 Preguntar por esta prenda</button>
+
+      <div class="mt-2.5 flex flex-col gap-0.5">
+        <span class="text-[10px] uppercase tracking-wider text-dorado font-semibold">${p.categoria || ''}</span>
+        <h3 class="font-serif text-[15px] leading-snug">${p.nombre}</h3>
+        <span class="text-xs text-gris">${[p.talla, p.color, p.genero].filter(Boolean).join(' · ')}</span>
+        <span class="font-serif text-lg text-rosa mt-1">$${Number(p.precio).toLocaleString('es-CO')}</span>
+      </div>
     </div>
   `).join('');
 }
@@ -395,21 +503,21 @@ function actualizarCarritoUI() {
   document.getElementById("checkout-btn").disabled = carrito.length === 0;
 
   if (carrito.length === 0) {
-    cont.innerHTML = '<p style="color:#999;">Tu carrito está vacío</p>';
+    cont.innerHTML = '<p class="text-gris text-sm py-6">Tu carrito está vacío</p>';
     document.getElementById("cart-total").textContent = "$0";
     return;
   }
 
   cont.innerHTML = carrito.map(i => `
-    <div class="cart-item">
+    <div class="flex justify-between items-center py-3 border-b border-rosa/10 text-sm">
       <div>
-        <div><b>${i.producto}</b></div>
-        <div style="color:#999;font-size:12px;">${[i.talla,i.color].filter(Boolean).join(' · ')} — $${Number(i.precio).toLocaleString('es-CO')}</div>
+        <div class="font-medium">${i.producto}</div>
+        <div class="text-gris text-xs">${[i.talla,i.color].filter(Boolean).join(' · ')} — $${Number(i.precio).toLocaleString('es-CO')}</div>
       </div>
-      <div class="qty">
-        <button onclick="cambiarCantidad('${i.codigo}', -1)">-</button>
-        <span>${i.cantidad}</span>
-        <button onclick="cambiarCantidad('${i.codigo}', 1)">+</button>
+      <div class="flex items-center gap-2">
+        <button onclick="cambiarCantidad('${i.codigo}', -1)" class="w-6 h-6 rounded-md border border-rosa/20 hover:bg-rosa-suave/50 text-sm">-</button>
+        <span class="w-4 text-center">${i.cantidad}</span>
+        <button onclick="cambiarCantidad('${i.codigo}', 1)" class="w-6 h-6 rounded-md border border-rosa/20 hover:bg-rosa-suave/50 text-sm">+</button>
       </div>
     </div>
   `).join('');
@@ -418,20 +526,30 @@ function actualizarCarritoUI() {
   document.getElementById("cart-total").textContent = "$" + total.toLocaleString('es-CO');
 }
 
-function abrirCarrito(){ document.getElementById("cart-overlay").style.display="block"; document.getElementById("cart-panel").style.display="flex"; }
-function cerrarCarrito(){ document.getElementById("cart-overlay").style.display="none"; document.getElementById("cart-panel").style.display="none"; }
+function abrirCarrito(){
+  document.getElementById("cart-overlay").classList.add("abierto");
+  document.getElementById("cart-panel").classList.add("abierto");
+}
+function cerrarCarrito(){
+  document.getElementById("cart-overlay").classList.remove("abierto");
+  document.getElementById("cart-panel").classList.remove("abierto");
+}
 
 function abrirCheckout() {
   if (carrito.length === 0) return;
   cerrarCarrito();
-  document.getElementById("modal-checkout").style.display = "flex";
+  const modal = document.getElementById("modal-checkout");
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
 }
 
 // Ajuste 3: botón para cancelar el formulario de envío y volver al carrito
 function cerrarCheckout() {
-  document.getElementById("modal-checkout").style.display = "none";
+  const modal = document.getElementById("modal-checkout");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
   document.getElementById("estado-msg").textContent = "";
-  document.getElementById("estado-msg").className = "";
+  document.getElementById("estado-msg").className = "text-sm mt-3";
   abrirCarrito();
 }
 
@@ -441,7 +559,7 @@ async function crearPedido() {
   const msg = document.getElementById("estado-msg");
 
   if (!nombre || !telefono) {
-    msg.className = "err"; msg.textContent = "Nombre y teléfono son obligatorios.";
+    msg.className = "text-sm mt-3 text-red-600"; msg.textContent = "Nombre y teléfono son obligatorios.";
     return;
   }
 
@@ -466,16 +584,23 @@ async function crearPedido() {
     pedidoNumeroActual = resultado.numero;
     pedidoTotalActual = Number(resultado.total).toLocaleString('es-CO');
 
-    document.getElementById("modal-checkout").style.display = "none";
+    const modalCheckout = document.getElementById("modal-checkout");
+    modalCheckout.classList.add("hidden");
+    modalCheckout.classList.remove("flex");
+
     document.getElementById("pedido-titulo").textContent = "Pedido " + resultado.numero + " creado";
     document.getElementById("pedido-total").textContent = "$" + pedidoTotalActual;
     document.getElementById("comprobante-form").style.display = "block";
     document.getElementById("gracias-block").style.display = "none";
-    document.getElementById("modal-comprobante").style.display = "flex";
+
+    const modalComprobante = document.getElementById("modal-comprobante");
+    modalComprobante.classList.remove("hidden");
+    modalComprobante.classList.add("flex");
+
     carrito = [];
     actualizarCarritoUI();
   } catch (e) {
-    msg.className = "err"; msg.textContent = "Error: " + e.message;
+    msg.className = "text-sm mt-3 text-red-600"; msg.textContent = "Error: " + e.message;
   } finally {
     boton.disabled = false; boton.textContent = "Confirmar pedido";
   }
@@ -496,7 +621,7 @@ async function subirComprobante() {
   const boton = document.getElementById("btn-subir-comprobante");
 
   if (!fileInput.files.length) {
-    estado.className = "err"; estado.textContent = "Selecciona una imagen o PDF del comprobante.";
+    estado.className = "text-sm mt-3 text-red-600"; estado.textContent = "Selecciona una imagen o PDF del comprobante.";
     return;
   }
 
@@ -515,13 +640,15 @@ async function subirComprobante() {
     document.getElementById("comprobante-form").style.display = "none";
     document.getElementById("gracias-block").style.display = "block";
   } catch (e) {
-    estado.className = "err"; estado.textContent = "Error: " + e.message;
+    estado.className = "text-sm mt-3 text-red-600"; estado.textContent = "Error: " + e.message;
     boton.disabled = false; boton.textContent = "Enviar comprobante";
   }
 }
 
 function volverATienda() {
-  document.getElementById("modal-comprobante").style.display = "none";
+  const modal = document.getElementById("modal-comprobante");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
   document.getElementById("comprobante-form").style.display = "block";
   document.getElementById("gracias-block").style.display = "none";
 
@@ -530,7 +657,7 @@ function volverATienda() {
   const boton = document.getElementById("btn-subir-comprobante");
   boton.disabled = false; boton.textContent = "Enviar comprobante";
   document.getElementById("estado-comprobante").textContent = "";
-  document.getElementById("estado-comprobante").className = "";
+  document.getElementById("estado-comprobante").className = "text-sm mt-3";
 
   // resetear formulario de envío
   ["c-nombre","c-telefono","c-documento","c-correo","c-direccion","c-ciudad","c-obs"].forEach(id => {
@@ -584,6 +711,7 @@ function enviarPedidoWhatsapp() {
 
 cargarProductos();
 activarBotonWhatsapp();
+configurarHeroMedia();
 </script>
 </body>
 </html>
